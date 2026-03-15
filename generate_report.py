@@ -139,9 +139,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
-
----
 
 **File 2 — `requirements.txt`**
 
