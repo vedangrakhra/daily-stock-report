@@ -1,5 +1,4 @@
 import os
-import json
 import requests
 from datetime import datetime
 
@@ -26,8 +25,8 @@ SECTORS = {
     },
     "Emerging Markets": {
         "Technology": [["MercadoLibre (MELI)","Sea Limited (SE)"],["Totvs (TOTS3.SA)","Grab Holdings (GRAB)"]],
-        "Financials": [["XP Inc (XP)","Bank Central Asia (BBCA.JK)"],["Nu Holdings (NU)","Itaú Unibanco (ITUB)"]],
-        "Industrials": [["Embraer (ERJ)","WEG S.A. (WEGE3.SA)"],["Localiza (RENT3.SA)","Rumo Logística (RAIL3.SA)"]],
+        "Financials": [["XP Inc (XP)","Bank Central Asia (BBCA.JK)"],["Nu Holdings (NU)","Itau Unibanco (ITUB)"]],
+        "Industrials": [["Embraer (ERJ)","WEG S.A. (WEGE3.SA)"],["Localiza (RENT3.SA)","Rumo Logistica (RAIL3.SA)"]],
         "Resources": [["Vale S.A. (VALE)","Petrobras (PBR)"],["Gerdau (GGB)","Suzano (SUZ)"]],
         "Consumer": [["Grupo Bimbo (BIMBOA.MX)","Magazine Luiza (MGLU3.SA)"],["Nu Holdings (NU)","Natura (NTCO)"]],
     }
@@ -60,12 +59,12 @@ Write a deep-dive research briefing for EXACTLY these 6 companies grouped by mar
 
 For EACH company use this exact structure:
 
-**[Company Name] ([Ticker]) — [Market] | [Sector]**
+[Company Name] ([Ticker]) - [Market] | [Sector]
 What They Do: 2-3 sentences plain English.
 How They Make Money: Revenue model, key segments, unit economics.
 Customer Type: B2B/B2C/B2G/mixed, retention dynamics.
 Industry Overview: Market size, growth rate, tailwinds and headwinds.
-Competitive Advantages: Specific moats — network effects, switching costs, scale, IP, brand, regulatory.
+Competitive Advantages: Specific moats - network effects, switching costs, scale, IP, brand, regulatory.
 Catalysts (Next 12-24 Months): 2-3 specific near/medium-term catalysts.
 Key Risks: 2-3 genuine company-specific risks.
 Valuation Snapshot: Approximate EV/EBITDA or P/E vs sector median. One sentence on cheap/fair/expensive and why.
@@ -117,7 +116,7 @@ def send_ntfy(date_label, schedule):
     requests.post(
         f"https://ntfy.sh/{NTFY_TOPIC}",
         headers={
-            "Title": f"Stock Report Ready — {date_label}",
+            "Title": f"Stock Report Ready - {date_label}",
             "Priority": "default",
             "Tags": "chart_increasing"
         },
@@ -139,9 +138,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-**File 2 — `requirements.txt`**
-
-Create new file, name it `requirements.txt`, paste:
-```
-requests==2.31.0
