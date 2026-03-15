@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Stock Research</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #060d1f; color: #e2e8f0; min-height: 100vh; }
+
+  .header { background: linear-gradient(135deg, #0f1e3c 0%, #1a3460 100%); border-bottom: 1px solid #1e3a5f; padding: 24px 20px; }
+  .header-inner { max-width: 720px; margin: 0 auto; }
+  .header-eyebrow { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 6px; }
+  .header h1 { font-size: 22px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .header-sub { font-size: 13px; color: #7fa8d4; }
+
+  .nav { display: flex; gap: 8px; margin-top: 16px; }
+  .nav-btn { font-size: 12px; padding: 5px 14px; border-radius: 20px; cursor: pointer; border: 1px solid #2a4a7f; background: transparent; color: #7fa8d4; }
+  .nav-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+
+  .body { max-width: 720px; margin: 0 auto; padding: 24px 20px; }
+
+  .report-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
+  .report-card:hover { border-color: #3b5ea6; }
+  .report-date { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 10px; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; letter-spacing: 0.5px; }
+  .pill-na { background: #1d4ed820; color: #60a5fa; border: 1px solid #1d4ed840; }
+  .pill-asia { background: #0891b220; color: #22d3ee; border: 1px solid #0891b240; }
+  .pill-em { background: #05966920; color: #34d399; border: 1px solid #05966940; }
+  .report-meta { display: flex; justify-content: space-between; align-items: center; }
+  .sent-badge { font-size: 11px; color: #22c55e; }
+  .notes-count { font-size: 11px; color: #4a90d9; }
+
+  .detail-back { background: transparent; border: none; color: #7fa8d4; font-size: 13px; cursor: pointer; margin-bottom: 14px; padding: 0; display: block; }
+  .report-frame { border: 1px solid #1e3a5f; border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+  .report-frame iframe { width: 100%; height: 70vh; border: none; background: #fff; display: block; }
+
+  .section-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 12px; display: block; }
+  .comment-card { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .comment-text { font-size: 14px; color: #e2e8f0; line-height: 1.6; flex: 1; }
+  .comment-ts { font-size: 11px; color: #475569; margin-top: 6px; }
+  .delete-btn { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0; flex-shrink: 0; }
+
+  textarea { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 12px 14px; color: #fff; font-size: 14px; font-family: inherit; outline: none; resize: vertical; }
+  textarea::placeholder { color: #475569; }
+  .btn-add { background: #1d4ed8; border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+  .btn-add:hover { background: #2563eb; }
+
+  .empty { color: #475569; font-size: 14px; padding: 40px 0; text-align: center; }
+  .loading { color: #4a90d9; font-size: 14px; padding: 40px 0; text-align: center; }
+
+  @media (max-width: 600px) {
+    .header { padding: 20px 16px; }
+    .body { padding: 20px 16px; }
+    .report-frame iframe { height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-eyebrow">Global Equity Intelligence</div>
+    <h1>Daily Stock Research</h1>
+    <div class="header-sub" id="header-sub">Loading...</div>
+    <div class="nav">
+      <button class="nav-btn active" id="nav-latest" onclick="showView('latest')">Latest</button>
+      <button class="nav-btn" id="nav-archive" onclick="showView('archive')">Archive</button>
+    </div>
+  </div>
+</div>
+
+<div class="body" id="main-body">
+  <div class="loading">Loading reports...</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://zywpzgjbsjjqedhhvbam.supabase.co";
+const SUPABASE_KEY = "sb_publishable_1D3jeBJUM3-DdifaHdx4Bg_MSJiQrsg";
+
+let reports = [];
+let currentView = "latest";
+let selectedReport = null;
+let comments = {};
+
+function pillClass(market) {
+  if (market === "North America") return "pill-na";
+  if (market === "Asia") return "pill-asia";
+  return "pill-em";
+}
+
+function formatPills(schedule) {
+  if (!schedule) return "";
+  return schedule.map(s =>
+    '<span class="pill ' + pillClass(s.market) + '">' + s.market + ' &middot; ' + s.sector + '</span>'
+  ).join("");
+}
+
+async function loadReports() {
+  try {
+    const resp = await fetch(SUPABASE_URL + "/rest/v1/reports?select=*&order=created_at.desc", {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + SUPABASE_KEY
+      }
+    });
+    reports = await resp.json();
+    comments = {};
+    reports.forEach(r => { comments[r.id] = r.comments || []; });
+    renderView();
+  } catch(e) {
+    document.getElementById("main-body").innerHTML = '<div class="empty">Could not load reports. Check your connection.</div>';
+  }
+}
+
+async function saveComments(reportId, commentList) {
+  comments[reportId] = commentList;
+  await fetch(SUPABASE_URL + "/rest/v1/reports?id=eq." + reportId, {
+    method: "PATCH",
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ comments: commentList })
+  });
+  reports = reports.map(r => r.id === reportId ? { ...r, comments: commentList } : r);
+}
+
+function showView(view) {
+  currentView = view;
+  selectedReport = null;
+  document.getElementById("nav-latest").className = "nav-btn" + (view === "latest" ? " active" : "");
+  document.getElementById("nav-archive").className = "nav-btn" + (view === "archive" ? " active" : "");
+  renderView();
+}
+
+function renderView() {
+  const today = new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+  document.getElementById("header-sub").textContent = today;
+
+  if (selectedReport) {
+    renderDetail(selectedReport);
+    return;
+  }
+  if (currentView === "latest") renderLatest();
+  else renderArchive();
+}
+
+function renderLatest() {
+  const body = document.getElementById("main-body");
+  if (reports.length === 0) {
+    body.innerHTML = '<div class="empty">No reports yet. The first one will arrive tomorrow morning.</div>';
+    return;
+  }
+  const r = reports[0];
+  body.innerHTML =
+    '<span class="section-label">Today\'s Report</span>' +
+    '<div style="background:#0f1e3c;border:1px solid #1e3a5f;border-radius:10px;padding:18px 20px;margin-bottom:20px;">' +
+      '<div class="report-date">' + r.date_label + '</div>' +
+      '<div class="pills">' + formatPills(r.schedule) + '</div>' +
+    '</div>' +
+    '<div class="report-frame"><iframe srcdoc="' + escAttr(r.html) + '" title="Report"></iframe></div>' +
+    '<span class="section-label">Your Notes</span>' +
+    renderComments(r.id) +
+    '<textarea id="comment-input" rows="3" placeholder="Add a note, question, or annotation..."></textarea>' +
+    '<button class="btn-add" onclick="addComment(' + r.id + ')">+ Add Note</button>';
+}
+
+function renderArchive() {
+  const body = document.getElementById("main-body");
+  if (reports.length === 0) {
+    body.innerHTML = '<div class="empty">No reports saved yet.</div>';
+    return;
+  }
+  let html = '<span class="section-label">' + reports.length + ' Reports Saved</span>';
+  reports.forEach(r => {
+    html +=
+      '<div class="report-card" onclick="openReport(' + r.id + ')">' +
+        '<div class="report-meta">' +
+          '<div class="report-date">' + r.date_label + '</div>' +
+          '<div style="text-align:right">' +
+            '<div class="notes-count">' + (r.comments || []).length + ' note' + ((r.comments || []).length !== 1 ? 's' : '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="pills" style="margin-top:10px;">' + formatPills(r.schedule) + '</div>' +
+      '</div>';
+  });
+  body.innerHTML = html;
+}
+
+function renderDetail(report) {
+  const body = document.getElementById("main-body");
+  body.innerHTML =
+    '<button class="detail-back" onclick="backToArchive()">&#8592; Back to Archive</button>' +
+    '<div style="background:#0f1e3c;border:1px solid #1e3a5f;border-radius:10px;padding:18px 20px;margin-bottom:20px;">' +
+      '<div class="report-date">' + report.date_label + '</div>' +
+      '<div class="pills">' + formatPills(report.schedule) + '</div>' +
+    '</div>' +
+    '<div class="report-frame"><iframe srcdoc="' + escAttr(report.html) + '" title="Report"></iframe></div>' +
+    '<span class="section-label">Your Notes</span>' +
+    renderComments(report.id) +
+    '<textarea id="comment-input" rows="3" placeholder="Add a note, question, or annotation..."></textarea>' +
+    '<button class="btn-add" onclick="addComment(' + report.id + ')">+ Add Note</button>';
+}
+
+function renderComments(reportId) {
+  const list = comments[reportId] || [];
+  if (list.length === 0) return '<div style="color:#475569;font-size:13px;margin-bottom:16px;">No notes yet.</div>';
+  return list.map(c =>
+    '<div class="comment-card">' +
+      '<div>' +
+        '<div class="comment-text">' + escHtml(c.text) + '</div>' +
+        '<div class="comment-ts">' + c.ts + '</div>' +
+      '</div>' +
+      '<button class="delete-btn" onclick="deleteComment(' + reportId + ',' + c.id + ')">&#215;</button>' +
+    '</div>'
+  ).join("");
+}
+
+function openReport(id) {
+  selectedReport = reports.find(r => r.id === id);
+  renderView();
+}
+
+function backToArchive() {
+  selectedReport = null;
+  renderArchive();
+}
+
+async function addComment(reportId) {
+  const input = document.getElementById("comment-input");
+  const text = input.value.trim();
+  if (!text) return;
+  const c = { id: Date.now(), text: text, ts: new Date().toLocaleString() };
+  const updated = [...(comments[reportId] || []), c];
+  await saveComments(reportId, updated);
+  if (selectedReport && selectedReport.id === reportId) {
+    selectedReport = reports.find(r => r.id === reportId);
+  }
+  renderView();
+}
+
+async function deleteComment(reportId, commentId) {
+  const updated = (comments[reportId] || []).filter(c => c.id !== commentId);
+  await saveComments(reportId, updated);
+  if (selectedReport && selectedReport.id === reportId) {
+    selectedReport = reports.find(r => r.id === reportId);
+  }
+  renderView();
+}
+
+function escAttr(str) { return (str || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+function escHtml(str) { return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+loadReports();
+</script>
+</body>
+</html>
