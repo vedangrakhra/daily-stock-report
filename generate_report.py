@@ -73,7 +73,7 @@ After all 6 companies add a Daily Market Theme: 4-5 sentences connecting the mac
 
 Format as clean professional HTML with inline styles. Background #ffffff. Header bar #0f1e3c white text. Each company in a card: white bg, border 1px solid #e2e8f0, border-radius 8px, padding 24px, margin-bottom 20px. Section labels bold #1e3a5f. Body text #374151 14px line-height 1.7. Font Helvetica Neue. Market group headers with colored pill: NA=#1d4ed8, Asia=#0891b2, EM=#059669. Max-width 680px centered. Footer with date."""
 
-def generate_report(prompt):
+def def generate_report(prompt):     resp = requests.post(         "https://api.anthropic.com/v1/messages",         headers={             "x-api-key": ANTHROPIC_API_KEY,             "anthropic-version": "2023-06-01",             "content-type": "application/json"         },         json={             "model": "claude-opus-4-5-20251101",             "max_tokens": 8000,             "messages": [{"role": "user", "content": prompt}]         },         timeout=120     )     if resp.status_code != 200:         print(f"API Error {resp.status_code}: {resp.text}")     resp.raise_for_status()     return resp.json()["content"][0]["text"](prompt):
     resp = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={
@@ -129,7 +129,7 @@ def main():
     date_str = datetime.utcnow().strftime("%A, %B %-d, %Y")
     print(f"Generating report for {date_str}...")
     prompt = build_prompt(schedule, date_str)
-    html = generate_report(prompt)
+    html = def generate_report(prompt):     resp = requests.post(         "https://api.anthropic.com/v1/messages",         headers={             "x-api-key": ANTHROPIC_API_KEY,             "anthropic-version": "2023-06-01",             "content-type": "application/json"         },         json={             "model": "claude-opus-4-5-20251101",             "max_tokens": 8000,             "messages": [{"role": "user", "content": prompt}]         },         timeout=120     )     if resp.status_code != 200:         print(f"API Error {resp.status_code}: {resp.text}")     resp.raise_for_status()     return resp.json()["content"][0]["text"](prompt)
     print("Report generated.")
     report_id = save_to_supabase(date_str, html, schedule)
     print(f"Saved to Supabase, id: {report_id}")
