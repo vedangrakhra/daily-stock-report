@@ -82,7 +82,7 @@ def generate_report(prompt):
             "content-type": "application/json"
         },
         json={
-            "model": "claude-opus-4-5",
+            "model": "claude-opus-4-5-20251101",
             "max_tokens": 8000,
             "messages": [{"role": "user", "content": prompt}]
         },
