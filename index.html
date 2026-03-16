@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -215,6 +214,7 @@ function reportViewHTML(r) {
   return html;
 }
 
+// FIX 1: id="card_<safeKey>" added to each company card so goToCompany can scroll to it
 function companyCardHTML(r, market, sector, company) {
   var key=market+":"+company;
   var isRead=!!(rs(r)[key]);
@@ -224,7 +224,7 @@ function companyCardHTML(r, market, sector, company) {
   var companyHtml=(ch(r)[company]||"");
   var safeKey=(r.id+key).replace(/[^a-zA-Z0-9]/g,"_");
 
-  var html='<div class="company-card'+(isBk?" is-bookmarked":"")+'">';
+  var html='<div class="company-card'+(isBk?" is-bookmarked":"")+'" id="card_'+safeKey+'">';
   html+='<div class="company-header" onclick="toggleOpen('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')">';
   html+='<div class="read-circle'+(isRead?" is-read":"")+'" onclick="event.stopPropagation();doRead('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')" title="'+(isRead?"Mark unread":"Mark read")+'">';
   if(isRead) html+='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -238,7 +238,7 @@ function companyCardHTML(r, market, sector, company) {
   if(companyHtml) {
     html+='<div class="company-report">'+companyHtml+'</div>';
   } else {
-    html+='<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company. Re-run the workflow to generate individual reports.</div>';
+    html+='<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company.</div>';
   }
   html+='<div class="notes-section">';
   html+='<span class="notes-label">Notes</span>';
@@ -253,88 +253,12 @@ function companyCardHTML(r, market, sector, company) {
   return html;
 }
 
-function getAllUnread() {
-  var items = [];
-  reports.forEach(function(r) {
-    (r.schedule||[]).forEach(function(seg) {
-      (seg.companies||[]).forEach(function(company) {
-        var key = seg.market + ":" + company;
-        if (!rs(r)[key]) {
-          items.push({ rid: r.id, market: seg.market, sector: seg.sector, company: company, dateLabel: r.date_label });
-        }
-      });
-    });
-  });
-  return items;
-}
-
-function unreadPanelHTML() {
-  var items = getAllUnread();
-  if (items.length === 0) return "";
-  var isOpen = unreadPanelOpen;
-  var html = '<div class="unread-panel">';
-  html += '<div class="unread-panel-header" onclick="toggleUnreadPanel()">';
-  html += '<div class="unread-panel-left">';
-  html += '<span class="unread-badge">'+items.length+'</span>';
-  html += '<span class="unread-panel-title">Unread Companies</span>';
-  html += '</div>';
-  html += '<span class="unread-toggle'+(isOpen?" is-open":"")+'">&#9660;</span>';
-  html += '</div>';
-  if (isOpen) {
-    html += '<div class="unread-list">';
-    items.forEach(function(item) {
-      var safeKey = (item.rid+item.market+item.company).replace(/[^a-zA-Z0-9]/g,"_");
-      html += '<div class="unread-item" id="uitem_'+safeKey+'">';
-      html += '<div class="read-circle" onclick="doReadFromUnread('+item.rid+',\''+ea(item.market)+'\',\''+ea(item.company)+'\')" title="Mark as read">';
-      html += '</div>';
-      html += '<div class="unread-item-info">';
-      html += '<div class="unread-item-name">'+eh(item.company)+'</div>';
-      html += '<div class="unread-item-meta">';
-      html += '<span class="unread-item-date">'+eh(item.dateLabel)+'</span>';
-      html += '<span class="unread-item-dot">&middot;</span>';
-      html += '<span>'+eh(item.market)+' &mdash; '+eh(item.sector)+'</span>';
-      html += '</div></div>';
-      html += '<button class="unread-go-btn" onclick="goToCompany('+item.rid+',\''+ea(item.market)+'\',\''+ea(item.company)+'\')">Go to report &rarr;</button>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-  html += '</div>';
-  return html;
-}
-
-function toggleUnreadPanel() {
-  unreadPanelOpen = !unreadPanelOpen;
-  render();
-}
-
-async function doReadFromUnread(rid, market, company) {
-  var r = getR(rid); if (!r) return;
-  var key = market + ":" + company;
-  var state = Object.assign({}, rs(r));
-  state[key] = true;
-  await patch(rid, {read_state: state});
-  render();
-}
-
-function goToCompany(rid, market, company) {
+// FIX 2: setTab does NOT reset openMap — cards stay open when switching tabs
+function setTab(i, rid) {
+  activeTab = i;
   selectedId = rid;
-  activeTab = MARKETS.indexOf(market);
-  if (activeTab < 0) activeTab = 0;
-  var key = rid + ":" + market + ":" + company;
-  openMap[key] = true;
-  topView = "today";
-  document.getElementById("btn-today").className = "top-nav-btn active";
-  document.getElementById("btn-archive").className = "top-nav-btn";
   render();
-  setTimeout(function() {
-    var safeKey = (rid+market+company).replace(/[^a-zA-Z0-9]/g,"_");
-    var el = document.getElementById("uitem_"+safeKey) || document.querySelector(".company-card");
-    if (el) el.scrollIntoView({behavior:"smooth", block:"center"});
-  }, 80);
 }
-
-
 
 function toggleOpen(rid,market,company){
   var key=rid+":"+market+":"+company;
@@ -379,6 +303,86 @@ async function doDelNote(rid,market,company,nid){
   if(notes[key])notes[key]=notes[key].filter(function(n){return n.id!==nid;});
   await patch(rid,{company_notes:notes});
   render();
+}
+
+function getAllUnread() {
+  var items = [];
+  reports.forEach(function(r) {
+    (r.schedule||[]).forEach(function(seg) {
+      (seg.companies||[]).forEach(function(company) {
+        var key = seg.market+":"+company;
+        if (!rs(r)[key]) {
+          items.push({rid:r.id, market:seg.market, sector:seg.sector, company:company, dateLabel:r.date_label});
+        }
+      });
+    });
+  });
+  return items;
+}
+
+function unreadPanelHTML() {
+  var items = getAllUnread();
+  if (items.length===0) return "";
+  var isOpen = unreadPanelOpen;
+  var html = '<div class="unread-panel">';
+  html += '<div class="unread-panel-header" onclick="toggleUnreadPanel()">';
+  html += '<div class="unread-panel-left">';
+  html += '<span class="unread-badge">'+items.length+'</span>';
+  html += '<span class="unread-panel-title">Unread Companies</span>';
+  html += '</div>';
+  html += '<span class="unread-toggle'+(isOpen?" is-open":"")+'">&#9660;</span>';
+  html += '</div>';
+  if (isOpen) {
+    html += '<div class="unread-list">';
+    items.forEach(function(item) {
+      html += '<div class="unread-item">';
+      html += '<div class="read-circle" onclick="doReadFromUnread('+item.rid+',\''+ea(item.market)+'\',\''+ea(item.company)+'\')" title="Mark as read"></div>';
+      html += '<div class="unread-item-info">';
+      html += '<div class="unread-item-name">'+eh(item.company)+'</div>';
+      html += '<div class="unread-item-meta">';
+      html += '<span class="unread-item-date">'+eh(item.dateLabel)+'</span>';
+      html += '<span class="unread-item-dot">&middot;</span>';
+      html += '<span>'+eh(item.market)+' &mdash; '+eh(item.sector)+'</span>';
+      html += '</div></div>';
+      html += '<button class="unread-go-btn" onclick="goToCompany('+item.rid+',\''+ea(item.market)+'\',\''+ea(item.company)+'\')">Go to report &rarr;</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function toggleUnreadPanel() {
+  unreadPanelOpen = !unreadPanelOpen;
+  render();
+}
+
+async function doReadFromUnread(rid, market, company) {
+  var r = getR(rid); if (!r) return;
+  var key = market+":"+company;
+  var state = Object.assign({}, rs(r));
+  state[key] = true;
+  await patch(rid, {read_state:state});
+  render();
+}
+
+// FIX 3: goToCompany — navigates to correct report+tab, opens the card, scrolls to card_<safeKey>
+function goToCompany(rid, market, company) {
+  selectedId = rid;
+  var tabIdx = MARKETS.indexOf(market);
+  activeTab = tabIdx >= 0 ? tabIdx : 0;
+  var mapKey = rid+":"+market+":"+company;
+  openMap[mapKey] = true;
+  topView = "today";
+  document.getElementById("btn-today").className = "top-nav-btn active";
+  document.getElementById("btn-archive").className = "top-nav-btn";
+  render();
+  setTimeout(function() {
+    var safeKey = (rid+market+company).replace(/[^a-zA-Z0-9]/g,"_");
+    var el = document.getElementById("card_"+safeKey);
+    if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
+  }, 60);
 }
 
 function calendarHTML(){
