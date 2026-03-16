@@ -54,6 +54,8 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .company-body { display: none; border-top: 1px solid #1e3a5f; }
 .company-body.is-open { display: block; }
 .company-report { background: #fff; padding: 0; }
+.pdf-btn { display: block; margin: 12px 20px 0; background: #0f1e3c; border: 1px solid #1e3a5f; color: #7fa8d4; font-size: 11px; padding: 6px 14px; border-radius: 6px; cursor: pointer; width: fit-content; }
+.pdf-btn:hover { border-color: #3b5ea6; color: #e2e8f0; }
 .notes-section { padding: 16px 20px 20px; }
 .notes-label { font-size: 10px; letter-spacing: 2px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 .note-item { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -63,21 +65,17 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .note-input { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; resize: vertical; }
 .note-input::placeholder { color: #475569; }
 .add-note-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-.archive-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; cursor: pointer; }
+.archive-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .archive-card:hover { border-color: #3b5ea6; }
-.archive-date { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 8px; }
-.archive-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.archive-date { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 6px; }
 .pills { display: flex; gap: 6px; flex-wrap: wrap; }
 .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
 .pill-na { background: #1d4ed820; color: #60a5fa; border: 1px solid #1d4ed840; }
 .pill-asia { background: #0891b220; color: #22d3ee; border: 1px solid #0891b240; }
 .pill-em { background: #05966920; color: #34d399; border: 1px solid #05966940; }
-.read-stat { font-size: 12px; color: #7fa8d4; }
-.read-stat.all-done { color: #22c55e; }
+.archive-arrow { color: #334155; font-size: 16px; flex-shrink: 0; }
 .empty { color: #475569; font-size: 14px; padding: 40px 0; text-align: center; }
 .back-btn { background: transparent; border: none; color: #7fa8d4; font-size: 13px; cursor: pointer; margin-bottom: 16px; padding: 0; display: block; }
-.market-theme { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-.market-theme-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 .unread-panel { background: #0f1e3c; border: 1px solid #2a4a7f; border-left: 3px solid #f59e0b; border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
 .unread-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; cursor: pointer; }
 .unread-panel-header:hover { background: #132238; }
@@ -164,10 +162,23 @@ function ch(r){return r.company_html||{};}
 function readCount(r){return Object.values(rs(r)).filter(Boolean).length;}
 function totalC(r){return (r.schedule||[]).reduce(function(n,s){return n+(s.companies||[]).length;},0);}
 
+// BUG FIX: find today's report by actual local date, not just reports[0]
+function getTodayReport() {
+  var now = new Date();
+  return reports.find(function(r) {
+    var d = new Date(r.created_at);
+    return d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate();
+  }) || (reports.length > 0 ? reports[0] : null);
+}
+
 function switchTop(v) {
   topView = v;
-  if (v==="today") selectedId = reports.length>0?reports[0].id:null;
-  else selectedId = null;
+  if (v==="today") {
+    var tr = getTodayReport();
+    selectedId = tr ? tr.id : null;
+  } else {
+    selectedId = null;
+  }
   activeTab=0; openMap={};
   document.getElementById("btn-today").className="top-nav-btn"+(v==="today"?" active":"");
   document.getElementById("btn-archive").className="top-nav-btn"+(v==="archive"?" active":"");
@@ -176,16 +187,26 @@ function switchTop(v) {
 
 function render() {
   var app = document.getElementById("app");
-  if ((topView==="today"||topView==="archive") && selectedId) {
+  if (topView==="archive" && selectedId) {
     var r = getR(selectedId);
     if (r) {
-      var back = topView==="archive"?'<button class="back-btn" onclick="switchTop(\'archive\')">&#8592; Back to Archive</button>':"";
-      app.innerHTML = back + unreadPanelHTML() + calendarHTML() + reportViewHTML(r);
+      app.innerHTML = '<button class="back-btn" onclick="switchTop(\'archive\')">&#8592; Back to Archive</button>' + calendarHTML() + reportViewHTML(r);
       return;
     }
   }
-  if (topView==="archive"){app.innerHTML=unreadPanelHTML()+archiveHTML();return;}
-  app.innerHTML=unreadPanelHTML()+'<div class="empty">No report yet today. Check back after 9am.</div>';
+  if (topView==="archive") {
+    app.innerHTML = archiveHTML();
+    return;
+  }
+  // today view
+  if (selectedId) {
+    var r = getR(selectedId);
+    if (r) {
+      app.innerHTML = unreadPanelHTML() + calendarHTML() + reportViewHTML(r);
+      return;
+    }
+  }
+  app.innerHTML = unreadPanelHTML() + '<div class="empty">No report yet today. Check back after 9am.</div>';
 }
 
 function reportViewHTML(r) {
@@ -214,7 +235,6 @@ function reportViewHTML(r) {
   return html;
 }
 
-// FIX 1: id="card_<safeKey>" added to each company card so goToCompany can scroll to it
 function companyCardHTML(r, market, sector, company) {
   var key=market+":"+company;
   var isRead=!!(rs(r)[key]);
@@ -236,9 +256,11 @@ function companyCardHTML(r, market, sector, company) {
 
   html+='<div class="company-body'+(isOpen?" is-open":"")+'">';
   if(companyHtml) {
-    html+='<div class="company-report">'+companyHtml+'</div>';
+    // Print/save as PDF button
+    html+='<button class="pdf-btn" onclick="printReport(\'pdf_'+safeKey+'\',\''+ea(company)+'\')">&#8681; Save as PDF</button>';
+    html+='<div class="company-report" id="pdf_'+safeKey+'">'+companyHtml+'</div>';
   } else {
-    html+='<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company.</div>';
+    html+='<div style="padding:20px;color:#475569;font-size:13px;">No report available — re-run the workflow to generate reports.</div>';
   }
   html+='<div class="notes-section">';
   html+='<span class="notes-label">Notes</span>';
@@ -253,7 +275,21 @@ function companyCardHTML(r, market, sector, company) {
   return html;
 }
 
-// FIX 2: setTab does NOT reset openMap — cards stay open when switching tabs
+// Print a specific company report as PDF using browser print dialog
+function printReport(elId, companyName) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  var w = window.open('', '_blank');
+  w.document.write('<html><head><title>'+companyName+'</title>');
+  w.document.write('<style>body{font-family:Helvetica Neue,Helvetica,Arial,sans-serif;margin:0;padding:0;}@media print{body{margin:0;}}</style>');
+  w.document.write('</head><body>');
+  w.document.write(el.innerHTML);
+  w.document.write('</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 300);
+}
+
 function setTab(i, rid) {
   activeTab = i;
   selectedId = rid;
@@ -305,9 +341,17 @@ async function doDelNote(rid,market,company,nid){
   render();
 }
 
+// BUG FIX: exclude today's report from unread panel (today is handled in the main view)
+function getTodayId() {
+  var tr = getTodayReport();
+  return tr ? tr.id : null;
+}
+
 function getAllUnread() {
+  var todayId = getTodayId();
   var items = [];
   reports.forEach(function(r) {
+    if (r.id === todayId) return; // skip today
     (r.schedule||[]).forEach(function(seg) {
       (seg.companies||[]).forEach(function(company) {
         var key = seg.market+":"+company;
@@ -328,7 +372,7 @@ function unreadPanelHTML() {
   html += '<div class="unread-panel-header" onclick="toggleUnreadPanel()">';
   html += '<div class="unread-panel-left">';
   html += '<span class="unread-badge">'+items.length+'</span>';
-  html += '<span class="unread-panel-title">Unread Companies</span>';
+  html += '<span class="unread-panel-title">Unread from previous days</span>';
   html += '</div>';
   html += '<span class="unread-toggle'+(isOpen?" is-open":"")+'">&#9660;</span>';
   html += '</div>';
@@ -367,7 +411,6 @@ async function doReadFromUnread(rid, market, company) {
   render();
 }
 
-// FIX 3: goToCompany — navigates to correct report+tab, opens the card, scrolls to card_<safeKey>
 function goToCompany(rid, market, company) {
   selectedId = rid;
   var tabIdx = MARKETS.indexOf(market);
@@ -385,13 +428,16 @@ function goToCompany(rid, market, company) {
   }, 60);
 }
 
+// BUG FIX: use local date for calendar dots, not UTC
 function calendarHTML(){
   var monthName=new Date(calYear,calMonth,1).toLocaleDateString("en-CA",{month:"long",year:"numeric"});
   var today=new Date();
   var repDates={};
   reports.forEach(function(r){
+    // Use local date so calendar dot matches the user's timezone
     var d=new Date(r.created_at);
-    var k=d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate();
+    var local = new Date(d.getTime() - d.getTimezoneOffset()*60000);
+    var k=local.getFullYear()+"-"+local.getMonth()+"-"+local.getDate();
     repDates[k]={id:r.id,fullyRead:readCount(r)===totalC(r)&&totalC(r)>0};
   });
   var firstDay=new Date(calYear,calMonth,1).getDay();
@@ -408,7 +454,8 @@ function calendarHTML(){
     var isSel=selectedId&&(function(dd){
       var r=getR(selectedId);if(!r)return false;
       var rd=new Date(r.created_at);
-      return rd.getFullYear()===calYear&&rd.getMonth()===calMonth&&rd.getDate()===dd;
+      var local=new Date(rd.getTime()-rd.getTimezoneOffset()*60000);
+      return local.getFullYear()===calYear&&local.getMonth()===calMonth&&local.getDate()===dd;
     })(d);
     var cls="cal-day";
     if(has) cls+=" clickable has-dot";
@@ -433,17 +480,18 @@ function selectDate(rid){
   render();
 }
 
+// BUG FIX: archive is now a clean date list — no unread panel, no read stats
 function archiveHTML(){
   if(reports.length===0) return '<div class="empty">No reports yet.</div>';
-  var html='<span style="font-size:10px;letter-spacing:3px;color:#4a90d9;text-transform:uppercase;display:block;margin-bottom:14px;">'+reports.length+' Reports</span>';
+  var html='<span style="font-size:10px;letter-spacing:3px;color:#4a90d9;text-transform:uppercase;display:block;margin-bottom:14px;">'+reports.length+' Report'+(reports.length===1?'':'s')+'</span>';
   reports.forEach(function(r){
-    var rc=readCount(r);var tc=totalC(r);var done=rc===tc&&tc>0;
     html+='<div class="archive-card" onclick="openArchive('+r.id+')">';
-    html+='<div class="archive-date">'+r.date_label+'</div>';
-    html+='<div class="archive-footer">';
-    html+='<div class="pills">'+(r.schedule||[]).map(function(s){return '<span class="pill '+pillCls(s.market)+'">'+s.market+' &middot; '+s.sector+'</span>';}).join("")+'</div>';
-    html+='<span class="read-stat'+(done?" all-done":"")+'">'+( done?"&#10003; All read":rc+"/"+tc+" read")+'</span>';
-    html+='</div></div>';
+    html+='<div>';
+    html+='<div class="archive-date">'+eh(r.date_label)+'</div>';
+    html+='<div class="pills" style="margin-top:4px;">'+(r.schedule||[]).map(function(s){return '<span class="pill '+pillCls(s.market)+'">'+s.market+' &middot; '+s.sector+'</span>';}).join("")+'</div>';
+    html+='</div>';
+    html+='<span class="archive-arrow">&#8250;</span>';
+    html+='</div>';
   });
   return html;
 }
@@ -457,10 +505,11 @@ function openArchive(rid){
 
 init();
 loadReports().then(function(){
-  if(reports.length>0) selectedId=reports[0].id;
+  var tr = getTodayReport();
+  selectedId = tr ? tr.id : null;
   render();
 }).catch(function(){
-  document.getElementById("app").innerHTML='<div class="empty">Could not load reports.</div>';
+  document.getElementById("app").innerHTML='<div class="empty">Could not load reports. Check your connection.</div>';
 });
 </script>
 </body>
