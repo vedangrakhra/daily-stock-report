@@ -149,9 +149,20 @@ def send_ntfy(date_label, schedule):
         data="Today's 6 companies: " + companies + ". Open your report app to read.",
         timeout=15
     )
-
+    
+def report_exists_today():
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    resp = requests.get(
+        SUPABASE_URL + "/rest/v1/reports?select=id&created_at=gte." + today + "T00:00:00",
+        headers={"apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY}
+    )
+    data = resp.json()
+    return len(data) > 0
 
 def main():
+    if report_exists_today():
+        print("Report already exists for today, skipping.")
+        return
     schedule = get_schedule()
     date_str = datetime.utcnow().strftime("%A, %B %-d, %Y")
     print("Generating report for " + date_str + "...")
