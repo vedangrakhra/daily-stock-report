@@ -1,4 +1,6 @@
+
 import os
+import json
 import requests
 from datetime import datetime
 
@@ -47,18 +49,11 @@ def get_schedule():
     return schedule
 
 
-def build_prompt(schedule, date_str):
-    lines = []
-    for s in schedule:
-        lines.append(s["market"] + " / " + s["sector"] + ": " + s["companies"][0] + " and " + s["companies"][1])
-    company_list = "\n".join(lines)
-
-    prompt = "You are a senior equity research analyst writing a structured daily stock briefing for a corporate development professional learning about global public markets.\n\n"
+def build_company_prompt(company, market, sector, date_str):
+    prompt = "You are a senior equity research analyst writing a structured stock briefing for a corporate development professional learning about global public markets.\n\n"
     prompt += "Today's date: " + date_str + "\n\n"
-    prompt += "Write a deep-dive research briefing for EXACTLY these 6 companies grouped by market:\n"
-    prompt += company_list + "\n\n"
-    prompt += "For EACH company use this exact structure:\n\n"
-    prompt += "[Company Name] ([Ticker]) - [Market] | [Sector]\n"
+    prompt += "Write a deep-dive research briefing for this ONE company: " + company + " (" + market + " | " + sector + ")\n\n"
+    prompt += "Use this exact structure:\n\n"
     prompt += "What They Do: 2-3 sentences plain English.\n"
     prompt += "How They Make Money: Revenue model, key segments, unit economics.\n"
     prompt += "Customer Type: B2B/B2C/B2G/mixed, retention dynamics.\n"
@@ -67,15 +62,15 @@ def build_prompt(schedule, date_str):
     prompt += "Catalysts (Next 12-24 Months): 2-3 specific near/medium-term catalysts.\n"
     prompt += "Key Risks: 2-3 genuine company-specific risks.\n"
     prompt += "Valuation Snapshot: Approximate EV/EBITDA or P/E vs sector median. One sentence on cheap/fair/expensive and why.\n\n"
-    prompt += "After all 6 companies add a Daily Market Theme: 4-5 sentences connecting the macro/sector thread across today's picks.\n\n"
-    prompt += "Format as clean professional HTML with inline styles. Background #ffffff. Header bar #0f1e3c white text. "
-    prompt += "Each company in a card: white bg, border 1px solid #e2e8f0, border-radius 8px, padding 24px, margin-bottom 20px. "
-    prompt += "Section labels bold #1e3a5f. Body text #374151 14px line-height 1.7. Font Helvetica Neue. "
-    prompt += "Market group headers with colored pill: NA=#1d4ed8, Asia=#0891b2, EM=#059669. Max-width 680px centered. Footer with date."
+    prompt += "Format as a self-contained HTML section with inline styles only. "
+    prompt += "White background #ffffff. Company name as h2 in #0f1e3c. "
+    prompt += "Section labels bold #1e3a5f. Body text #374151 14px line-height 1.7. "
+    prompt += "Font Helvetica Neue. Padding 24px. No outer card border - just the content. "
+    prompt += "Do not include html, head, or body tags. Just the content div."
     return prompt
 
 
-def generate_report(prompt):
+def call_api(prompt):
     resp = requests.post(
         "https://api.anthropic.com/v1/messages",
         headers={
@@ -85,7 +80,7 @@ def generate_report(prompt):
         },
         json={
             "model": "claude-opus-4-5-20251101",
-            "max_tokens": 8000,
+            "max_tokens": 2000,
             "messages": [{"role": "user", "content": prompt}]
         },
         timeout=120
@@ -96,7 +91,29 @@ def generate_report(prompt):
     return resp.json()["content"][0]["text"]
 
 
-def save_to_supabase(date_label, html, schedule):
+def build_summary_prompt(schedule, date_str):
+    lines = []
+    for s in schedule:
+        lines.append(s["market"] + " / " + s["sector"] + ": " + s["companies"][0] + " and " + s["companies"][1])
+    prompt = "Write a Daily Market Theme: 4-5 sentences connecting the macro and sector thread across these 6 companies:\n"
+    prompt += "\n".join(lines)
+    prompt += "\n\nFormat as a simple HTML paragraph with inline styles. Text color #374151, font-size 14px, line-height 1.7, font Helvetica Neue. No outer tags."
+    return prompt
+
+
+def save_to_supabase(date_label, schedule, company_html, summary_html):
+    full_html = "<div style='font-family:Helvetica Neue,Helvetica,Arial,sans-serif;max-width:680px;margin:0 auto;'>"
+    full_html += "<div style='background:#0f1e3c;padding:24px;border-radius:8px;margin-bottom:20px;'>"
+    full_html += "<h1 style='color:#fff;font-size:20px;margin:0;'>Daily Stock Research</h1>"
+    full_html += "<p style='color:#7fa8d4;margin:6px 0 0;font-size:13px;'>" + date_label + "</p>"
+    full_html += "</div>"
+    for key, html in company_html.items():
+        full_html += "<div style='border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;overflow:hidden;'>" + html + "</div>"
+    full_html += "<div style='background:#f8fafc;border-radius:8px;padding:20px;margin-top:8px;'>"
+    full_html += "<p style='font-weight:bold;color:#1e3a5f;margin-bottom:8px;'>Daily Market Theme</p>"
+    full_html += summary_html
+    full_html += "</div></div>"
+
     resp = requests.post(
         SUPABASE_URL + "/rest/v1/reports",
         headers={
@@ -107,12 +124,15 @@ def save_to_supabase(date_label, html, schedule):
         },
         json={
             "date_label": date_label,
-            "html": html,
+            "html": full_html,
             "schedule": schedule,
+            "company_html": company_html,
             "comments": []
         },
         timeout=30
     )
+    if resp.status_code not in [200, 201]:
+        print("Supabase Error " + str(resp.status_code) + ": " + resp.text)
     resp.raise_for_status()
     return resp.json()[0]["id"]
 
@@ -135,11 +155,21 @@ def main():
     schedule = get_schedule()
     date_str = datetime.utcnow().strftime("%A, %B %-d, %Y")
     print("Generating report for " + date_str + "...")
-    prompt = build_prompt(schedule, date_str)
-    html = generate_report(prompt)
-    print("Report generated.")
-    report_id = save_to_supabase(date_str, html, schedule)
+
+    company_html = {}
+    for seg in schedule:
+        for company in seg["companies"]:
+            print("Generating: " + company)
+            prompt = build_company_prompt(company, seg["market"], seg["sector"], date_str)
+            html = call_api(prompt)
+            company_html[company] = html
+
+    print("Generating market theme...")
+    summary_html = call_api(build_summary_prompt(schedule, date_str))
+
+    report_id = save_to_supabase(date_str, schedule, company_html, summary_html)
     print("Saved to Supabase, id: " + str(report_id))
+
     send_ntfy(date_str, schedule)
     print("Notification sent. Done.")
 
