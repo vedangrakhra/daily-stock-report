@@ -51,15 +51,16 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .star-btn.is-bookmarked { color: #d97706; }
 .chevron { color: #475569; font-size: 11px; margin-left: 4px; transition: transform 0.2s; }
 .chevron.is-open { transform: rotate(180deg); }
-.company-body { display: none; padding: 0 20px 20px; border-top: 1px solid #1e3a5f; }
+.company-body { display: none; border-top: 1px solid #1e3a5f; }
 .company-body.is-open { display: block; }
-.report-iframe { width: 100%; height: 500px; border: none; background: #fff; border-radius: 8px; margin: 16px 0; display: block; }
-.notes-label { font-size: 10px; letter-spacing: 2px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; margin-top: 16px; display: block; }
+.company-report { background: #fff; padding: 0; }
+.notes-section { padding: 16px 20px 20px; }
+.notes-label { font-size: 10px; letter-spacing: 2px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 .note-item { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .note-text { font-size: 13px; color: #e2e8f0; line-height: 1.6; flex: 1; }
 .note-ts { font-size: 11px; color: #475569; margin-top: 4px; }
 .del-note-btn { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 0; flex-shrink: 0; }
-.note-input { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; resize: vertical; margin-top: 8px; }
+.note-input { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; resize: vertical; }
 .note-input::placeholder { color: #475569; }
 .add-note-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; }
 .archive-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; cursor: pointer; }
@@ -75,15 +76,15 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .read-stat.all-done { color: #22c55e; }
 .empty { color: #475569; font-size: 14px; padding: 40px 0; text-align: center; }
 .back-btn { background: transparent; border: none; color: #7fa8d4; font-size: 13px; cursor: pointer; margin-bottom: 16px; padding: 0; display: block; }
+.market-theme { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.market-theme-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 @media (max-width: 600px) {
   .header, .body { padding: 16px; }
   .market-tab { padding: 10px 12px; font-size: 12px; }
-  .report-iframe { height: 380px; }
 }
 </style>
 </head>
 <body>
-
 <div class="header">
   <div class="header-inner">
     <div class="eyebrow">Global Equity Intelligence</div>
@@ -95,7 +96,6 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
     </div>
   </div>
 </div>
-
 <div class="body" id="app"><div style="color:#4a90d9;padding:40px 0;text-align:center;">Loading...</div></div>
 
 <script>
@@ -107,248 +107,254 @@ var selectedId = null;
 var activeTab = 0;
 var openMap = {};
 var calYear, calMonth;
-
-var MARKETS = ["North America", "Asia", "Emerging Markets"];
-var TAB_CLASSES = ["tab-na", "tab-asia", "tab-em"];
+var MARKETS = ["North America","Asia","Emerging Markets"];
+var TAB_CLS = ["tab-na","tab-asia","tab-em"];
 
 function init() {
   var now = new Date();
-  calYear = now.getFullYear();
-  calMonth = now.getMonth();
-  document.getElementById("header-date").textContent = now.toLocaleDateString("en-CA", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  calYear = now.getFullYear(); calMonth = now.getMonth();
+  document.getElementById("header-date").textContent = now.toLocaleDateString("en-CA",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
 }
 
 async function loadReports() {
-  var resp = await fetch(SUPA_URL + "/rest/v1/reports?select=*&order=created_at.desc", {
-    headers: {"apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY}
+  var resp = await fetch(SUPA_URL+"/rest/v1/reports?select=*&order=created_at.desc",{
+    headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY}
   });
   reports = await resp.json();
 }
 
 async function patch(id, data) {
-  await fetch(SUPA_URL + "/rest/v1/reports?id=eq." + id, {
-    method: "PATCH",
-    headers: {"apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY, "Content-Type": "application/json"},
-    body: JSON.stringify(data)
+  await fetch(SUPA_URL+"/rest/v1/reports?id=eq."+id,{
+    method:"PATCH",
+    headers:{"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json"},
+    body:JSON.stringify(data)
   });
-  var idx = reports.findIndex(function(r) { return r.id === id; });
-  if (idx > -1) Object.assign(reports[idx], data);
+  var idx = reports.findIndex(function(r){return r.id===id;});
+  if (idx>-1) Object.assign(reports[idx],data);
 }
 
-function getR(id) { return reports.find(function(r) { return r.id === id; }); }
-function pillCls(m) { return m === "North America" ? "pill-na" : m === "Asia" ? "pill-asia" : "pill-em"; }
-function ea(s) { return (s||"").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
-function eh(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function rs(r) { return r.read_state || {}; }
-function bk(r) { return r.bookmarks || {}; }
-function cn(r) { return r.company_notes || {}; }
-function readCount(r) { return Object.values(rs(r)).filter(Boolean).length; }
-function totalC(r) { return (r.schedule||[]).reduce(function(n,s){ return n + (s.companies||[]).length; }, 0); }
+function getR(id){return reports.find(function(r){return r.id===id;});}
+function pillCls(m){return m==="North America"?"pill-na":m==="Asia"?"pill-asia":"pill-em";}
+function ea(s){return (s||"").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function eh(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function rs(r){return r.read_state||{};}
+function bk(r){return r.bookmarks||{};}
+function cn(r){return r.company_notes||{};}
+function ch(r){return r.company_html||{};}
+function readCount(r){return Object.values(rs(r)).filter(Boolean).length;}
+function totalC(r){return (r.schedule||[]).reduce(function(n,s){return n+(s.companies||[]).length;},0);}
 
 function switchTop(v) {
   topView = v;
-  if (v === "today") selectedId = reports.length > 0 ? reports[0].id : null;
+  if (v==="today") selectedId = reports.length>0?reports[0].id:null;
   else selectedId = null;
-  activeTab = 0; openMap = {};
-  document.getElementById("btn-today").className = "top-nav-btn" + (v==="today"?" active":"");
-  document.getElementById("btn-archive").className = "top-nav-btn" + (v==="archive"?" active":"");
+  activeTab=0; openMap={};
+  document.getElementById("btn-today").className="top-nav-btn"+(v==="today"?" active":"");
+  document.getElementById("btn-archive").className="top-nav-btn"+(v==="archive"?" active":"");
   render();
 }
 
 function render() {
   var app = document.getElementById("app");
-  if (topView === "today" && selectedId) {
+  if ((topView==="today"||topView==="archive") && selectedId) {
     var r = getR(selectedId);
-    if (r) { app.innerHTML = calendarHTML() + reportViewHTML(r); return; }
+    if (r) {
+      var back = topView==="archive"?'<button class="back-btn" onclick="switchTop(\'archive\')">&#8592; Back to Archive</button>':"";
+      app.innerHTML = back + calendarHTML() + reportViewHTML(r);
+      return;
+    }
   }
-  if (topView === "archive" && selectedId) {
-    var r2 = getR(selectedId);
-    if (r2) { app.innerHTML = '<button class="back-btn" onclick="switchTop(\'archive\')">&#8592; Back to Archive</button>' + calendarHTML() + reportViewHTML(r2); return; }
-  }
-  if (topView === "archive") { app.innerHTML = archiveHTML(); return; }
-  app.innerHTML = '<div class="empty">No report yet today. Check back after 9am.</div>';
+  if (topView==="archive"){app.innerHTML=archiveHTML();return;}
+  app.innerHTML='<div class="empty">No report yet today. Check back after 9am.</div>';
 }
 
 function reportViewHTML(r) {
-  var rc = readCount(r); var tc = totalC(r);
-  var pct = tc > 0 ? Math.round(rc/tc*100) : 0;
-  var html = '<div class="progress-wrap">';
-  html += '<div class="progress-label"><span>' + rc + ' of ' + tc + ' companies read</span><span>' + pct + '%</span></div>';
-  html += '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>';
-  html += '<div class="market-tabs">';
-  MARKETS.forEach(function(m, i) {
-    var seg = (r.schedule||[]).find(function(s){ return s.market===m; });
-    if (!seg) return;
-    var src = (seg.companies||[]).filter(function(c){ return rs(r)[m+":"+c]; }).length;
-    var stc = (seg.companies||[]).length;
-    var cls = "market-tab" + (activeTab===i ? " "+TAB_CLASSES[i] : "");
-    html += '<div class="' + cls + '" onclick="setTab(' + i + ',' + r.id + ')">' + m + ' <span style="font-size:11px;opacity:0.7">(' + src + '/' + stc + ')</span></div>';
+  var rc=readCount(r); var tc=totalC(r);
+  var pct=tc>0?Math.round(rc/tc*100):0;
+  var html='<div class="progress-wrap">';
+  html+='<div class="progress-label"><span>'+rc+' of '+tc+' companies read</span><span>'+pct+'%</span></div>';
+  html+='<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div></div>';
+  html+='<div class="market-tabs">';
+  MARKETS.forEach(function(m,i){
+    var seg=(r.schedule||[]).find(function(s){return s.market===m;});
+    if(!seg)return;
+    var src=(seg.companies||[]).filter(function(c){return rs(r)[m+":"+c];}).length;
+    var stc=(seg.companies||[]).length;
+    var cls="market-tab"+(activeTab===i?" "+TAB_CLS[i]:"");
+    html+='<div class="'+cls+'" onclick="setTab('+i+','+r.id+')">'+m+' <span style="font-size:11px;opacity:0.7">('+src+'/'+stc+')</span></div>';
   });
-  html += '</div>';
-  var activeMkt = MARKETS[activeTab];
-  var seg2 = (r.schedule||[]).find(function(s){ return s.market===activeMkt; });
-  if (seg2) {
-    (seg2.companies||[]).forEach(function(company) {
-      html += companyCardHTML(r, activeMkt, seg2.sector, company);
+  html+='</div>';
+  var activeMkt=MARKETS[activeTab];
+  var seg2=(r.schedule||[]).find(function(s){return s.market===activeMkt;});
+  if(seg2){
+    (seg2.companies||[]).forEach(function(company){
+      html+=companyCardHTML(r,activeMkt,seg2.sector,company);
     });
   }
   return html;
 }
 
 function companyCardHTML(r, market, sector, company) {
-  var key = market + ":" + company;
-  var isRead = !!(rs(r)[key]);
-  var isBk = !!(bk(r)[key]);
-  var isOpen = !!(openMap[r.id+":"+key]);
-  var notes = (cn(r)[key]||[]);
-  var safeKey = (r.id + key).replace(/[^a-zA-Z0-9]/g,"_");
+  var key=market+":"+company;
+  var isRead=!!(rs(r)[key]);
+  var isBk=!!(bk(r)[key]);
+  var isOpen=!!(openMap[r.id+":"+key]);
+  var notes=(cn(r)[key]||[]);
+  var companyHtml=(ch(r)[company]||"");
+  var safeKey=(r.id+key).replace(/[^a-zA-Z0-9]/g,"_");
 
-  var html = '<div class="company-card' + (isBk?" is-bookmarked":"") + '">';
-  html += '<div class="company-header" onclick="toggleOpen(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\')">';
-  html += '<div class="read-circle' + (isRead?" is-read":"") + '" onclick="event.stopPropagation();doRead(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\')" title="' + (isRead?"Mark unread":"Mark read") + '">';
-  if (isRead) html += '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  html += '</div>';
-  html += '<div class="company-info"><div class="company-name">' + eh(company) + '</div><div class="company-sector">' + eh(sector) + '</div></div>';
-  html += '<button class="star-btn' + (isBk?" is-bookmarked":"") + '" onclick="event.stopPropagation();doBookmark(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\')" title="Bookmark">&#9733;</button>';
-  html += '<span class="chevron' + (isOpen?" is-open":"") + '">&#9660;</span>';
-  html += '</div>';
-  html += '<div class="company-body' + (isOpen?" is-open":"") + '">';
-  html += '<iframe class="report-iframe" srcdoc="' + ea(r.html) + '" title="' + ea(company) + '"></iframe>';
-  html += '<span class="notes-label">Notes</span>';
-  if (notes.length===0) html += '<div style="font-size:13px;color:#475569;margin-bottom:10px;">No notes yet.</div>';
-  notes.forEach(function(n) {
-    html += '<div class="note-item"><div><div class="note-text">' + eh(n.text) + '</div><div class="note-ts">' + n.ts + '</div></div>';
-    html += '<button class="del-note-btn" onclick="doDelNote(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\',' + n.id + ')">&#215;</button></div>';
-  });
-  html += '<textarea class="note-input" id="ni_' + safeKey + '" rows="2" placeholder="Add a note..."></textarea>';
-  html += '<button class="add-note-btn" onclick="doAddNote(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\',\'ni_' + safeKey + '\')">+ Add Note</button>';
-  html += '</div></div>';
-  return html;
-}
+  var html='<div class="company-card'+(isBk?" is-bookmarked":"")+'">';
+  html+='<div class="company-header" onclick="toggleOpen('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')">';
+  html+='<div class="read-circle'+(isRead?" is-read":"")+'" onclick="event.stopPropagation();doRead('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')" title="'+(isRead?"Mark unread":"Mark read")+'">';
+  if(isRead) html+='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  html+='</div>';
+  html+='<div class="company-info"><div class="company-name">'+eh(company)+'</div><div class="company-sector">'+eh(sector)+'</div></div>';
+  html+='<button class="star-btn'+(isBk?" is-bookmarked":"")+'" onclick="event.stopPropagation();doBookmark('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')" title="Bookmark">&#9733;</button>';
+  html+='<span class="chevron'+(isOpen?" is-open":"")+'">&#9660;</span>';
+  html+='</div>';
 
-function setTab(i, rid) { activeTab = i; selectedId = rid; render(); }
-
-function toggleOpen(rid, market, company) {
-  var key = rid+":"+market+":"+company;
-  openMap[key] = !openMap[key];
-  render();
-}
-
-async function doRead(rid, market, company) {
-  var r = getR(rid); if (!r) return;
-  var key = market+":"+company;
-  var state = Object.assign({}, rs(r));
-  state[key] = !state[key];
-  await patch(rid, {read_state: state});
-  render();
-}
-
-async function doBookmark(rid, market, company) {
-  var r = getR(rid); if (!r) return;
-  var key = market+":"+company;
-  var state = Object.assign({}, bk(r));
-  state[key] = !state[key];
-  await patch(rid, {bookmarks: state});
-  render();
-}
-
-async function doAddNote(rid, market, company, inputId) {
-  var r = getR(rid); if (!r) return;
-  var el = document.getElementById(inputId);
-  if (!el || !el.value.trim()) return;
-  var key = market+":"+company;
-  var notes = JSON.parse(JSON.stringify(cn(r)));
-  if (!notes[key]) notes[key] = [];
-  notes[key].push({id: Date.now(), text: el.value.trim(), ts: new Date().toLocaleString()});
-  await patch(rid, {company_notes: notes});
-  render();
-}
-
-async function doDelNote(rid, market, company, nid) {
-  var r = getR(rid); if (!r) return;
-  var key = market+":"+company;
-  var notes = JSON.parse(JSON.stringify(cn(r)));
-  if (notes[key]) notes[key] = notes[key].filter(function(n){ return n.id!==nid; });
-  await patch(rid, {company_notes: notes});
-  render();
-}
-
-function calendarHTML() {
-  var monthName = new Date(calYear, calMonth, 1).toLocaleDateString("en-CA", {month:"long", year:"numeric"});
-  var today = new Date();
-  var repDates = {};
-  reports.forEach(function(r) {
-    var d = new Date(r.created_at);
-    var k = d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate();
-    repDates[k] = {id: r.id, fullyRead: readCount(r)===totalC(r) && totalC(r)>0};
-  });
-  var firstDay = new Date(calYear, calMonth, 1).getDay();
-  var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-  var html = '<div class="calendar-wrap">';
-  html += '<div class="cal-header"><button class="cal-nav-btn" onclick="calPrev()">&#8249;</button><span class="cal-title">'+monthName+'</span><button class="cal-nav-btn" onclick="calNext()">&#8250;</button></div>';
-  html += '<div class="cal-grid">';
-  ["Su","Mo","Tu","We","Th","Fr","Sa"].forEach(function(d){ html += '<div class="cal-day-label">'+d+'</div>'; });
-  for (var i=0;i<firstDay;i++) html += '<div class="cal-day"></div>';
-  for (var d=1;d<=daysInMonth;d++) {
-    var k = calYear+"-"+calMonth+"-"+d;
-    var has = !!repDates[k];
-    var isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
-    var isSel = selectedId && (function(dd){
-      var r = getR(selectedId); if (!r) return false;
-      var rd = new Date(r.created_at);
-      return rd.getFullYear()===calYear && rd.getMonth()===calMonth && rd.getDate()===dd;
-    })(d);
-    var cls = "cal-day";
-    if (has) cls += " clickable has-dot";
-    if (has && repDates[k].fullyRead) cls += " fully-read";
-    if (isToday) cls += " is-today";
-    if (isSel) cls += " selected";
-    var click = has ? 'onclick="selectDate('+repDates[k].id+')"' : '';
-    html += '<div class="'+cls+'" '+click+'>'+d+'</div>';
+  html+='<div class="company-body'+(isOpen?" is-open":"")+'">';
+  if(companyHtml) {
+    html+='<div class="company-report">'+companyHtml+'</div>';
+  } else {
+    html+='<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company. Re-run the workflow to generate individual reports.</div>';
   }
-  html += '</div></div>';
+  html+='<div class="notes-section">';
+  html+='<span class="notes-label">Notes</span>';
+  if(notes.length===0) html+='<div style="font-size:13px;color:#475569;margin-bottom:10px;">No notes yet.</div>';
+  notes.forEach(function(n){
+    html+='<div class="note-item"><div><div class="note-text">'+eh(n.text)+'</div><div class="note-ts">'+n.ts+'</div></div>';
+    html+='<button class="del-note-btn" onclick="doDelNote('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\','+n.id+')">&#215;</button></div>';
+  });
+  html+='<textarea class="note-input" id="ni_'+safeKey+'" rows="2" placeholder="Add a note..."></textarea>';
+  html+='<button class="add-note-btn" onclick="doAddNote('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\',\'ni_'+safeKey+'\')">+ Add Note</button>';
+  html+='</div></div></div>';
   return html;
 }
 
-function calPrev() { calMonth--; if (calMonth<0){calMonth=11;calYear--;} render(); }
-function calNext() { calMonth++; if (calMonth>11){calMonth=0;calYear++;} render(); }
+function setTab(i,rid){activeTab=i;selectedId=rid;render();}
 
-function selectDate(rid) {
-  selectedId = rid; activeTab = 0; openMap = {};
-  topView = "today";
-  document.getElementById("btn-today").className = "top-nav-btn active";
-  document.getElementById("btn-archive").className = "top-nav-btn";
+function toggleOpen(rid,market,company){
+  var key=rid+":"+market+":"+company;
+  openMap[key]=!openMap[key];
   render();
 }
 
-function archiveHTML() {
-  if (reports.length===0) return '<div class="empty">No reports yet.</div>';
-  var html = '<span style="font-size:10px;letter-spacing:3px;color:#4a90d9;text-transform:uppercase;display:block;margin-bottom:14px;">'+reports.length+' Reports</span>';
-  reports.forEach(function(r) {
-    var rc = readCount(r); var tc = totalC(r); var done = rc===tc && tc>0;
-    html += '<div class="archive-card" onclick="openArchive('+r.id+')">';
-    html += '<div class="archive-date">'+r.date_label+'</div>';
-    html += '<div class="archive-footer">';
-    html += '<div class="pills">'+(r.schedule||[]).map(function(s){ return '<span class="pill '+pillCls(s.market)+'">'+s.market+' &middot; '+s.sector+'</span>'; }).join("")+'</div>';
-    html += '<span class="read-stat'+(done?" all-done":"")+'">'+( done ? "&#10003; All read" : rc+"/"+tc+" read")+'</span>';
-    html += '</div></div>';
+async function doRead(rid,market,company){
+  var r=getR(rid);if(!r)return;
+  var key=market+":"+company;
+  var state=Object.assign({},rs(r));
+  state[key]=!state[key];
+  await patch(rid,{read_state:state});
+  render();
+}
+
+async function doBookmark(rid,market,company){
+  var r=getR(rid);if(!r)return;
+  var key=market+":"+company;
+  var state=Object.assign({},bk(r));
+  state[key]=!state[key];
+  await patch(rid,{bookmarks:state});
+  render();
+}
+
+async function doAddNote(rid,market,company,inputId){
+  var r=getR(rid);if(!r)return;
+  var el=document.getElementById(inputId);
+  if(!el||!el.value.trim())return;
+  var key=market+":"+company;
+  var notes=JSON.parse(JSON.stringify(cn(r)));
+  if(!notes[key])notes[key]=[];
+  notes[key].push({id:Date.now(),text:el.value.trim(),ts:new Date().toLocaleString()});
+  await patch(rid,{company_notes:notes});
+  render();
+}
+
+async function doDelNote(rid,market,company,nid){
+  var r=getR(rid);if(!r)return;
+  var key=market+":"+company;
+  var notes=JSON.parse(JSON.stringify(cn(r)));
+  if(notes[key])notes[key]=notes[key].filter(function(n){return n.id!==nid;});
+  await patch(rid,{company_notes:notes});
+  render();
+}
+
+function calendarHTML(){
+  var monthName=new Date(calYear,calMonth,1).toLocaleDateString("en-CA",{month:"long",year:"numeric"});
+  var today=new Date();
+  var repDates={};
+  reports.forEach(function(r){
+    var d=new Date(r.created_at);
+    var k=d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate();
+    repDates[k]={id:r.id,fullyRead:readCount(r)===totalC(r)&&totalC(r)>0};
+  });
+  var firstDay=new Date(calYear,calMonth,1).getDay();
+  var daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  var html='<div class="calendar-wrap">';
+  html+='<div class="cal-header"><button class="cal-nav-btn" onclick="calPrev()">&#8249;</button><span class="cal-title">'+monthName+'</span><button class="cal-nav-btn" onclick="calNext()">&#8250;</button></div>';
+  html+='<div class="cal-grid">';
+  ["Su","Mo","Tu","We","Th","Fr","Sa"].forEach(function(d){html+='<div class="cal-day-label">'+d+'</div>';});
+  for(var i=0;i<firstDay;i++) html+='<div class="cal-day"></div>';
+  for(var d=1;d<=daysInMonth;d++){
+    var k=calYear+"-"+calMonth+"-"+d;
+    var has=!!repDates[k];
+    var isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    var isSel=selectedId&&(function(dd){
+      var r=getR(selectedId);if(!r)return false;
+      var rd=new Date(r.created_at);
+      return rd.getFullYear()===calYear&&rd.getMonth()===calMonth&&rd.getDate()===dd;
+    })(d);
+    var cls="cal-day";
+    if(has) cls+=" clickable has-dot";
+    if(has&&repDates[k].fullyRead) cls+=" fully-read";
+    if(isToday) cls+=" is-today";
+    if(isSel) cls+=" selected";
+    var click=has?'onclick="selectDate('+repDates[k].id+')"':'';
+    html+='<div class="'+cls+'" '+click+'>'+d+'</div>';
+  }
+  html+='</div></div>';
+  return html;
+}
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}render();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}render();}
+
+function selectDate(rid){
+  selectedId=rid;activeTab=0;openMap={};
+  topView="today";
+  document.getElementById("btn-today").className="top-nav-btn active";
+  document.getElementById("btn-archive").className="top-nav-btn";
+  render();
+}
+
+function archiveHTML(){
+  if(reports.length===0) return '<div class="empty">No reports yet.</div>';
+  var html='<span style="font-size:10px;letter-spacing:3px;color:#4a90d9;text-transform:uppercase;display:block;margin-bottom:14px;">'+reports.length+' Reports</span>';
+  reports.forEach(function(r){
+    var rc=readCount(r);var tc=totalC(r);var done=rc===tc&&tc>0;
+    html+='<div class="archive-card" onclick="openArchive('+r.id+')">';
+    html+='<div class="archive-date">'+r.date_label+'</div>';
+    html+='<div class="archive-footer">';
+    html+='<div class="pills">'+(r.schedule||[]).map(function(s){return '<span class="pill '+pillCls(s.market)+'">'+s.market+' &middot; '+s.sector+'</span>';}).join("")+'</div>';
+    html+='<span class="read-stat'+(done?" all-done":"")+'">'+( done?"&#10003; All read":rc+"/"+tc+" read")+'</span>';
+    html+='</div></div>';
   });
   return html;
 }
 
-function openArchive(rid) {
-  selectedId = rid; activeTab = 0; openMap = {}; topView = "archive";
-  document.getElementById("btn-today").className = "top-nav-btn";
-  document.getElementById("btn-archive").className = "top-nav-btn active";
+function openArchive(rid){
+  selectedId=rid;activeTab=0;openMap={};topView="archive";
+  document.getElementById("btn-today").className="top-nav-btn";
+  document.getElementById("btn-archive").className="top-nav-btn active";
   render();
 }
 
 init();
-loadReports().then(function() {
-  if (reports.length > 0) selectedId = reports[0].id;
+loadReports().then(function(){
+  if(reports.length>0) selectedId=reports[0].id;
   render();
-}).catch(function() {
-  document.getElementById("app").innerHTML = '<div class="empty">Could not load reports.</div>';
+}).catch(function(){
+  document.getElementById("app").innerHTML='<div class="empty">Could not load reports.</div>';
 });
 </script>
 </body>
