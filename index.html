@@ -425,7 +425,7 @@ function goToCompany(rid, market, company) {
     var safeKey = (rid+market+company).replace(/[^a-zA-Z0-9]/g,"_");
     var el = document.getElementById("card_"+safeKey);
     if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
-  }, 60);
+  }, 200);
 }
 
 // BUG FIX: use local date for calendar dots, not UTC
