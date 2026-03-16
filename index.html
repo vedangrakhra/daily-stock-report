@@ -5,256 +5,351 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Daily Stock Research</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #060d1f; color: #e2e8f0; min-height: 100vh; }
-
-  .header { background: linear-gradient(135deg, #0f1e3c 0%, #1a3460 100%); border-bottom: 1px solid #1e3a5f; padding: 24px 20px; }
-  .header-inner { max-width: 720px; margin: 0 auto; }
-  .header-eyebrow { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 6px; }
-  .header h1 { font-size: 22px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-  .header-sub { font-size: 13px; color: #7fa8d4; }
-
-  .nav { display: flex; gap: 8px; margin-top: 16px; }
-  .nav-btn { font-size: 12px; padding: 5px 14px; border-radius: 20px; cursor: pointer; border: 1px solid #2a4a7f; background: transparent; color: #7fa8d4; }
-  .nav-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
-
-  .body { max-width: 720px; margin: 0 auto; padding: 24px 20px; }
-
-  .report-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 18px 20px; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s; }
-  .report-card:hover { border-color: #3b5ea6; }
-  .report-date { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 10px; }
-  .pills { display: flex; gap: 6px; flex-wrap: wrap; }
-  .pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; letter-spacing: 0.5px; }
-  .pill-na { background: #1d4ed820; color: #60a5fa; border: 1px solid #1d4ed840; }
-  .pill-asia { background: #0891b220; color: #22d3ee; border: 1px solid #0891b240; }
-  .pill-em { background: #05966920; color: #34d399; border: 1px solid #05966940; }
-  .report-meta { display: flex; justify-content: space-between; align-items: center; }
-  .sent-badge { font-size: 11px; color: #22c55e; }
-  .notes-count { font-size: 11px; color: #4a90d9; }
-
-  .detail-back { background: transparent; border: none; color: #7fa8d4; font-size: 13px; cursor: pointer; margin-bottom: 14px; padding: 0; display: block; }
-  .report-frame { border: 1px solid #1e3a5f; border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
-  .report-frame iframe { width: 100%; height: 70vh; border: none; background: #fff; display: block; }
-
-  .section-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 12px; display: block; }
-  .comment-card { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  .comment-text { font-size: 14px; color: #e2e8f0; line-height: 1.6; flex: 1; }
-  .comment-ts { font-size: 11px; color: #475569; margin-top: 6px; }
-  .delete-btn { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 18px; padding: 0; flex-shrink: 0; }
-
-  textarea { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 12px 14px; color: #fff; font-size: 14px; font-family: inherit; outline: none; resize: vertical; }
-  textarea::placeholder { color: #475569; }
-  .btn-add { background: #1d4ed8; border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-  .btn-add:hover { background: #2563eb; }
-
-  .empty { color: #475569; font-size: 14px; padding: 40px 0; text-align: center; }
-  .loading { color: #4a90d9; font-size: 14px; padding: 40px 0; text-align: center; }
-
-  @media (max-width: 600px) {
-    .header { padding: 20px 16px; }
-    .body { padding: 20px 16px; }
-    .report-frame iframe { height: 60vh; }
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #060d1f; color: #e2e8f0; min-height: 100vh; }
+.header { background: linear-gradient(135deg, #0f1e3c 0%, #1a3460 100%); border-bottom: 1px solid #1e3a5f; padding: 20px; }
+.header-inner { max-width: 780px; margin: 0 auto; }
+.eyebrow { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 5px; }
+.header h1 { font-size: 22px; font-weight: 600; color: #fff; }
+.header-date { font-size: 13px; color: #7fa8d4; margin-top: 4px; }
+.top-nav { display: flex; gap: 8px; margin-top: 14px; }
+.top-nav-btn { font-size: 12px; padding: 5px 14px; border-radius: 20px; cursor: pointer; border: 1px solid #2a4a7f; background: transparent; color: #7fa8d4; }
+.top-nav-btn.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
+.body { max-width: 780px; margin: 0 auto; padding: 24px 20px; }
+.calendar-wrap { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; }
+.cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.cal-title { font-size: 14px; font-weight: 600; color: #fff; }
+.cal-nav-btn { background: transparent; border: 1px solid #1e3a5f; color: #7fa8d4; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-day-label { text-align: center; font-size: 10px; color: #475569; letter-spacing: 1px; padding-bottom: 6px; text-transform: uppercase; }
+.cal-day { text-align: center; padding: 6px 2px; border-radius: 6px; font-size: 13px; color: #475569; position: relative; }
+.cal-day.clickable { cursor: pointer; color: #e2e8f0; font-weight: 500; }
+.cal-day.clickable:hover { background: #1e3a5f; }
+.cal-day.has-dot::after { content: ''; display: block; width: 4px; height: 4px; background: #4a90d9; border-radius: 50%; margin: 2px auto 0; }
+.cal-day.fully-read::after { background: #22c55e; }
+.cal-day.selected { background: #1d4ed8; color: #fff; }
+.cal-day.is-today { border: 1px solid #4a90d9; }
+.progress-wrap { margin-bottom: 20px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #7fa8d4; margin-bottom: 6px; }
+.progress-bar { height: 4px; background: #1e3a5f; border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: #1d4ed8; border-radius: 2px; transition: width 0.3s; }
+.market-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid #1e3a5f; }
+.market-tab { padding: 10px 20px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; color: #7fa8d4; }
+.market-tab.tab-na { border-bottom-color: #3b82f6; color: #60a5fa; }
+.market-tab.tab-asia { border-bottom-color: #06b6d4; color: #22d3ee; }
+.market-tab.tab-em { border-bottom-color: #10b981; color: #34d399; }
+.company-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+.company-card.is-bookmarked { border-color: #d97706; }
+.company-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; }
+.company-header:hover { background: #132238; }
+.read-circle { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #334155; background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.read-circle.is-read { background: #22c55e; border-color: #22c55e; }
+.company-info { flex: 1; }
+.company-name { font-size: 15px; font-weight: 600; color: #fff; }
+.company-sector { font-size: 12px; color: #7fa8d4; margin-top: 2px; }
+.star-btn { background: transparent; border: none; cursor: pointer; font-size: 18px; color: #334155; padding: 0; }
+.star-btn.is-bookmarked { color: #d97706; }
+.chevron { color: #475569; font-size: 11px; margin-left: 4px; transition: transform 0.2s; }
+.chevron.is-open { transform: rotate(180deg); }
+.company-body { display: none; padding: 0 20px 20px; border-top: 1px solid #1e3a5f; }
+.company-body.is-open { display: block; }
+.report-iframe { width: 100%; height: 500px; border: none; background: #fff; border-radius: 8px; margin: 16px 0; display: block; }
+.notes-label { font-size: 10px; letter-spacing: 2px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; margin-top: 16px; display: block; }
+.note-item { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.note-text { font-size: 13px; color: #e2e8f0; line-height: 1.6; flex: 1; }
+.note-ts { font-size: 11px; color: #475569; margin-top: 4px; }
+.del-note-btn { background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 16px; padding: 0; flex-shrink: 0; }
+.note-input { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; resize: vertical; margin-top: 8px; }
+.note-input::placeholder { color: #475569; }
+.add-note-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+.archive-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; cursor: pointer; }
+.archive-card:hover { border-color: #3b5ea6; }
+.archive-date { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+.archive-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; }
+.pill-na { background: #1d4ed820; color: #60a5fa; border: 1px solid #1d4ed840; }
+.pill-asia { background: #0891b220; color: #22d3ee; border: 1px solid #0891b240; }
+.pill-em { background: #05966920; color: #34d399; border: 1px solid #05966940; }
+.read-stat { font-size: 12px; color: #7fa8d4; }
+.read-stat.all-done { color: #22c55e; }
+.empty { color: #475569; font-size: 14px; padding: 40px 0; text-align: center; }
+.back-btn { background: transparent; border: none; color: #7fa8d4; font-size: 13px; cursor: pointer; margin-bottom: 16px; padding: 0; display: block; }
+@media (max-width: 600px) {
+  .header, .body { padding: 16px; }
+  .market-tab { padding: 10px 12px; font-size: 12px; }
+  .report-iframe { height: 380px; }
+}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-inner">
-    <div class="header-eyebrow">Global Equity Intelligence</div>
+    <div class="eyebrow">Global Equity Intelligence</div>
     <h1>Daily Stock Research</h1>
-    <div class="header-sub" id="header-sub">Loading...</div>
-    <div class="nav">
-      <button class="nav-btn active" id="nav-latest" onclick="showView('latest')">Latest</button>
-      <button class="nav-btn" id="nav-archive" onclick="showView('archive')">Archive</button>
+    <div class="header-date" id="header-date"></div>
+    <div class="top-nav">
+      <button class="top-nav-btn active" id="btn-today" onclick="switchTop('today')">Today</button>
+      <button class="top-nav-btn" id="btn-archive" onclick="switchTop('archive')">Archive</button>
     </div>
   </div>
 </div>
 
-<div class="body" id="main-body">
-  <div class="loading">Loading reports...</div>
-</div>
+<div class="body" id="app"><div style="color:#4a90d9;padding:40px 0;text-align:center;">Loading...</div></div>
 
 <script>
-const SUPABASE_URL = "https://zywpzgjbsjjqedhhvbam.supabase.co";
-const SUPABASE_KEY = "sb_publishable_1D3jeBJUM3-DdifaHdx4Bg_MSJiQrsg";
+var SUPA_URL = "https://zywpzgjbsjjqedhhvbam.supabase.co";
+var SUPA_KEY = "sb_publishable_1D3jeBJUM3-DdifaHdx4Bg_MSJiQrsg";
+var reports = [];
+var topView = "today";
+var selectedId = null;
+var activeTab = 0;
+var openMap = {};
+var calYear, calMonth;
 
-let reports = [];
-let currentView = "latest";
-let selectedReport = null;
-let comments = {};
+var MARKETS = ["North America", "Asia", "Emerging Markets"];
+var TAB_CLASSES = ["tab-na", "tab-asia", "tab-em"];
 
-function pillClass(market) {
-  if (market === "North America") return "pill-na";
-  if (market === "Asia") return "pill-asia";
-  return "pill-em";
-}
-
-function formatPills(schedule) {
-  if (!schedule) return "";
-  return schedule.map(s =>
-    '<span class="pill ' + pillClass(s.market) + '">' + s.market + ' &middot; ' + s.sector + '</span>'
-  ).join("");
+function init() {
+  var now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  document.getElementById("header-date").textContent = now.toLocaleDateString("en-CA", {weekday:"long",year:"numeric",month:"long",day:"numeric"});
 }
 
 async function loadReports() {
-  try {
-    const resp = await fetch(SUPABASE_URL + "/rest/v1/reports?select=*&order=created_at.desc", {
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": "Bearer " + SUPABASE_KEY
-      }
-    });
-    reports = await resp.json();
-    comments = {};
-    reports.forEach(r => { comments[r.id] = r.comments || []; });
-    renderView();
-  } catch(e) {
-    document.getElementById("main-body").innerHTML = '<div class="empty">Could not load reports. Check your connection.</div>';
-  }
+  var resp = await fetch(SUPA_URL + "/rest/v1/reports?select=*&order=created_at.desc", {
+    headers: {"apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY}
+  });
+  reports = await resp.json();
 }
 
-async function saveComments(reportId, commentList) {
-  comments[reportId] = commentList;
-  await fetch(SUPABASE_URL + "/rest/v1/reports?id=eq." + reportId, {
+async function patch(id, data) {
+  await fetch(SUPA_URL + "/rest/v1/reports?id=eq." + id, {
     method: "PATCH",
-    headers: {
-      "apikey": SUPABASE_KEY,
-      "Authorization": "Bearer " + SUPABASE_KEY,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ comments: commentList })
+    headers: {"apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY, "Content-Type": "application/json"},
+    body: JSON.stringify(data)
   });
-  reports = reports.map(r => r.id === reportId ? { ...r, comments: commentList } : r);
+  var idx = reports.findIndex(function(r) { return r.id === id; });
+  if (idx > -1) Object.assign(reports[idx], data);
 }
 
-function showView(view) {
-  currentView = view;
-  selectedReport = null;
-  document.getElementById("nav-latest").className = "nav-btn" + (view === "latest" ? " active" : "");
-  document.getElementById("nav-archive").className = "nav-btn" + (view === "archive" ? " active" : "");
-  renderView();
+function getR(id) { return reports.find(function(r) { return r.id === id; }); }
+function pillCls(m) { return m === "North America" ? "pill-na" : m === "Asia" ? "pill-asia" : "pill-em"; }
+function ea(s) { return (s||"").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+function eh(s) { return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function rs(r) { return r.read_state || {}; }
+function bk(r) { return r.bookmarks || {}; }
+function cn(r) { return r.company_notes || {}; }
+function readCount(r) { return Object.values(rs(r)).filter(Boolean).length; }
+function totalC(r) { return (r.schedule||[]).reduce(function(n,s){ return n + (s.companies||[]).length; }, 0); }
+
+function switchTop(v) {
+  topView = v;
+  if (v === "today") selectedId = reports.length > 0 ? reports[0].id : null;
+  else selectedId = null;
+  activeTab = 0; openMap = {};
+  document.getElementById("btn-today").className = "top-nav-btn" + (v==="today"?" active":"");
+  document.getElementById("btn-archive").className = "top-nav-btn" + (v==="archive"?" active":"");
+  render();
 }
 
-function renderView() {
-  const today = new Date().toLocaleDateString("en-CA", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-  document.getElementById("header-sub").textContent = today;
-
-  if (selectedReport) {
-    renderDetail(selectedReport);
-    return;
+function render() {
+  var app = document.getElementById("app");
+  if (topView === "today" && selectedId) {
+    var r = getR(selectedId);
+    if (r) { app.innerHTML = calendarHTML() + reportViewHTML(r); return; }
   }
-  if (currentView === "latest") renderLatest();
-  else renderArchive();
+  if (topView === "archive" && selectedId) {
+    var r2 = getR(selectedId);
+    if (r2) { app.innerHTML = '<button class="back-btn" onclick="switchTop(\'archive\')">&#8592; Back to Archive</button>' + calendarHTML() + reportViewHTML(r2); return; }
+  }
+  if (topView === "archive") { app.innerHTML = archiveHTML(); return; }
+  app.innerHTML = '<div class="empty">No report yet today. Check back after 9am.</div>';
 }
 
-function renderLatest() {
-  const body = document.getElementById("main-body");
-  if (reports.length === 0) {
-    body.innerHTML = '<div class="empty">No reports yet. The first one will arrive tomorrow morning.</div>';
-    return;
-  }
-  const r = reports[0];
-  body.innerHTML =
-    '<span class="section-label">Today\'s Report</span>' +
-    '<div style="background:#0f1e3c;border:1px solid #1e3a5f;border-radius:10px;padding:18px 20px;margin-bottom:20px;">' +
-      '<div class="report-date">' + r.date_label + '</div>' +
-      '<div class="pills">' + formatPills(r.schedule) + '</div>' +
-    '</div>' +
-    '<div class="report-frame"><iframe srcdoc="' + escAttr(r.html) + '" title="Report"></iframe></div>' +
-    '<span class="section-label">Your Notes</span>' +
-    renderComments(r.id) +
-    '<textarea id="comment-input" rows="3" placeholder="Add a note, question, or annotation..."></textarea>' +
-    '<button class="btn-add" onclick="addComment(' + r.id + ')">+ Add Note</button>';
-}
-
-function renderArchive() {
-  const body = document.getElementById("main-body");
-  if (reports.length === 0) {
-    body.innerHTML = '<div class="empty">No reports saved yet.</div>';
-    return;
-  }
-  let html = '<span class="section-label">' + reports.length + ' Reports Saved</span>';
-  reports.forEach(r => {
-    html +=
-      '<div class="report-card" onclick="openReport(' + r.id + ')">' +
-        '<div class="report-meta">' +
-          '<div class="report-date">' + r.date_label + '</div>' +
-          '<div style="text-align:right">' +
-            '<div class="notes-count">' + (r.comments || []).length + ' note' + ((r.comments || []).length !== 1 ? 's' : '') + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div class="pills" style="margin-top:10px;">' + formatPills(r.schedule) + '</div>' +
-      '</div>';
+function reportViewHTML(r) {
+  var rc = readCount(r); var tc = totalC(r);
+  var pct = tc > 0 ? Math.round(rc/tc*100) : 0;
+  var html = '<div class="progress-wrap">';
+  html += '<div class="progress-label"><span>' + rc + ' of ' + tc + ' companies read</span><span>' + pct + '%</span></div>';
+  html += '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>';
+  html += '<div class="market-tabs">';
+  MARKETS.forEach(function(m, i) {
+    var seg = (r.schedule||[]).find(function(s){ return s.market===m; });
+    if (!seg) return;
+    var src = (seg.companies||[]).filter(function(c){ return rs(r)[m+":"+c]; }).length;
+    var stc = (seg.companies||[]).length;
+    var cls = "market-tab" + (activeTab===i ? " "+TAB_CLASSES[i] : "");
+    html += '<div class="' + cls + '" onclick="setTab(' + i + ',' + r.id + ')">' + m + ' <span style="font-size:11px;opacity:0.7">(' + src + '/' + stc + ')</span></div>';
   });
-  body.innerHTML = html;
-}
-
-function renderDetail(report) {
-  const body = document.getElementById("main-body");
-  body.innerHTML =
-    '<button class="detail-back" onclick="backToArchive()">&#8592; Back to Archive</button>' +
-    '<div style="background:#0f1e3c;border:1px solid #1e3a5f;border-radius:10px;padding:18px 20px;margin-bottom:20px;">' +
-      '<div class="report-date">' + report.date_label + '</div>' +
-      '<div class="pills">' + formatPills(report.schedule) + '</div>' +
-    '</div>' +
-    '<div class="report-frame"><iframe srcdoc="' + escAttr(report.html) + '" title="Report"></iframe></div>' +
-    '<span class="section-label">Your Notes</span>' +
-    renderComments(report.id) +
-    '<textarea id="comment-input" rows="3" placeholder="Add a note, question, or annotation..."></textarea>' +
-    '<button class="btn-add" onclick="addComment(' + report.id + ')">+ Add Note</button>';
-}
-
-function renderComments(reportId) {
-  const list = comments[reportId] || [];
-  if (list.length === 0) return '<div style="color:#475569;font-size:13px;margin-bottom:16px;">No notes yet.</div>';
-  return list.map(c =>
-    '<div class="comment-card">' +
-      '<div>' +
-        '<div class="comment-text">' + escHtml(c.text) + '</div>' +
-        '<div class="comment-ts">' + c.ts + '</div>' +
-      '</div>' +
-      '<button class="delete-btn" onclick="deleteComment(' + reportId + ',' + c.id + ')">&#215;</button>' +
-    '</div>'
-  ).join("");
-}
-
-function openReport(id) {
-  selectedReport = reports.find(r => r.id === id);
-  renderView();
-}
-
-function backToArchive() {
-  selectedReport = null;
-  renderArchive();
-}
-
-async function addComment(reportId) {
-  const input = document.getElementById("comment-input");
-  const text = input.value.trim();
-  if (!text) return;
-  const c = { id: Date.now(), text: text, ts: new Date().toLocaleString() };
-  const updated = [...(comments[reportId] || []), c];
-  await saveComments(reportId, updated);
-  if (selectedReport && selectedReport.id === reportId) {
-    selectedReport = reports.find(r => r.id === reportId);
+  html += '</div>';
+  var activeMkt = MARKETS[activeTab];
+  var seg2 = (r.schedule||[]).find(function(s){ return s.market===activeMkt; });
+  if (seg2) {
+    (seg2.companies||[]).forEach(function(company) {
+      html += companyCardHTML(r, activeMkt, seg2.sector, company);
+    });
   }
-  renderView();
+  return html;
 }
 
-async function deleteComment(reportId, commentId) {
-  const updated = (comments[reportId] || []).filter(c => c.id !== commentId);
-  await saveComments(reportId, updated);
-  if (selectedReport && selectedReport.id === reportId) {
-    selectedReport = reports.find(r => r.id === reportId);
+function companyCardHTML(r, market, sector, company) {
+  var key = market + ":" + company;
+  var isRead = !!(rs(r)[key]);
+  var isBk = !!(bk(r)[key]);
+  var isOpen = !!(openMap[r.id+":"+key]);
+  var notes = (cn(r)[key]||[]);
+  var safeKey = (r.id + key).replace(/[^a-zA-Z0-9]/g,"_");
+
+  var html = '<div class="company-card' + (isBk?" is-bookmarked":"") + '">';
+  html += '<div class="company-header" onclick="toggleOpen(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\')">';
+  html += '<div class="read-circle' + (isRead?" is-read":"") + '" onclick="event.stopPropagation();doRead(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\')" title="' + (isRead?"Mark unread":"Mark read") + '">';
+  if (isRead) html += '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  html += '</div>';
+  html += '<div class="company-info"><div class="company-name">' + eh(company) + '</div><div class="company-sector">' + eh(sector) + '</div></div>';
+  html += '<button class="star-btn' + (isBk?" is-bookmarked":"") + '" onclick="event.stopPropagation();doBookmark(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\')" title="Bookmark">&#9733;</button>';
+  html += '<span class="chevron' + (isOpen?" is-open":"") + '">&#9660;</span>';
+  html += '</div>';
+  html += '<div class="company-body' + (isOpen?" is-open":"") + '">';
+  html += '<iframe class="report-iframe" srcdoc="' + ea(r.html) + '" title="' + ea(company) + '"></iframe>';
+  html += '<span class="notes-label">Notes</span>';
+  if (notes.length===0) html += '<div style="font-size:13px;color:#475569;margin-bottom:10px;">No notes yet.</div>';
+  notes.forEach(function(n) {
+    html += '<div class="note-item"><div><div class="note-text">' + eh(n.text) + '</div><div class="note-ts">' + n.ts + '</div></div>';
+    html += '<button class="del-note-btn" onclick="doDelNote(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\',' + n.id + ')">&#215;</button></div>';
+  });
+  html += '<textarea class="note-input" id="ni_' + safeKey + '" rows="2" placeholder="Add a note..."></textarea>';
+  html += '<button class="add-note-btn" onclick="doAddNote(' + r.id + ',\'' + ea(market) + '\',\'' + ea(company) + '\',\'ni_' + safeKey + '\')">+ Add Note</button>';
+  html += '</div></div>';
+  return html;
+}
+
+function setTab(i, rid) { activeTab = i; selectedId = rid; render(); }
+
+function toggleOpen(rid, market, company) {
+  var key = rid+":"+market+":"+company;
+  openMap[key] = !openMap[key];
+  render();
+}
+
+async function doRead(rid, market, company) {
+  var r = getR(rid); if (!r) return;
+  var key = market+":"+company;
+  var state = Object.assign({}, rs(r));
+  state[key] = !state[key];
+  await patch(rid, {read_state: state});
+  render();
+}
+
+async function doBookmark(rid, market, company) {
+  var r = getR(rid); if (!r) return;
+  var key = market+":"+company;
+  var state = Object.assign({}, bk(r));
+  state[key] = !state[key];
+  await patch(rid, {bookmarks: state});
+  render();
+}
+
+async function doAddNote(rid, market, company, inputId) {
+  var r = getR(rid); if (!r) return;
+  var el = document.getElementById(inputId);
+  if (!el || !el.value.trim()) return;
+  var key = market+":"+company;
+  var notes = JSON.parse(JSON.stringify(cn(r)));
+  if (!notes[key]) notes[key] = [];
+  notes[key].push({id: Date.now(), text: el.value.trim(), ts: new Date().toLocaleString()});
+  await patch(rid, {company_notes: notes});
+  render();
+}
+
+async function doDelNote(rid, market, company, nid) {
+  var r = getR(rid); if (!r) return;
+  var key = market+":"+company;
+  var notes = JSON.parse(JSON.stringify(cn(r)));
+  if (notes[key]) notes[key] = notes[key].filter(function(n){ return n.id!==nid; });
+  await patch(rid, {company_notes: notes});
+  render();
+}
+
+function calendarHTML() {
+  var monthName = new Date(calYear, calMonth, 1).toLocaleDateString("en-CA", {month:"long", year:"numeric"});
+  var today = new Date();
+  var repDates = {};
+  reports.forEach(function(r) {
+    var d = new Date(r.created_at);
+    var k = d.getFullYear()+"-"+d.getMonth()+"-"+d.getDate();
+    repDates[k] = {id: r.id, fullyRead: readCount(r)===totalC(r) && totalC(r)>0};
+  });
+  var firstDay = new Date(calYear, calMonth, 1).getDay();
+  var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  var html = '<div class="calendar-wrap">';
+  html += '<div class="cal-header"><button class="cal-nav-btn" onclick="calPrev()">&#8249;</button><span class="cal-title">'+monthName+'</span><button class="cal-nav-btn" onclick="calNext()">&#8250;</button></div>';
+  html += '<div class="cal-grid">';
+  ["Su","Mo","Tu","We","Th","Fr","Sa"].forEach(function(d){ html += '<div class="cal-day-label">'+d+'</div>'; });
+  for (var i=0;i<firstDay;i++) html += '<div class="cal-day"></div>';
+  for (var d=1;d<=daysInMonth;d++) {
+    var k = calYear+"-"+calMonth+"-"+d;
+    var has = !!repDates[k];
+    var isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    var isSel = selectedId && (function(dd){
+      var r = getR(selectedId); if (!r) return false;
+      var rd = new Date(r.created_at);
+      return rd.getFullYear()===calYear && rd.getMonth()===calMonth && rd.getDate()===dd;
+    })(d);
+    var cls = "cal-day";
+    if (has) cls += " clickable has-dot";
+    if (has && repDates[k].fullyRead) cls += " fully-read";
+    if (isToday) cls += " is-today";
+    if (isSel) cls += " selected";
+    var click = has ? 'onclick="selectDate('+repDates[k].id+')"' : '';
+    html += '<div class="'+cls+'" '+click+'>'+d+'</div>';
   }
-  renderView();
+  html += '</div></div>';
+  return html;
 }
 
-function escAttr(str) { return (str || "").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
-function escHtml(str) { return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function calPrev() { calMonth--; if (calMonth<0){calMonth=11;calYear--;} render(); }
+function calNext() { calMonth++; if (calMonth>11){calMonth=0;calYear++;} render(); }
 
-loadReports();
+function selectDate(rid) {
+  selectedId = rid; activeTab = 0; openMap = {};
+  topView = "today";
+  document.getElementById("btn-today").className = "top-nav-btn active";
+  document.getElementById("btn-archive").className = "top-nav-btn";
+  render();
+}
+
+function archiveHTML() {
+  if (reports.length===0) return '<div class="empty">No reports yet.</div>';
+  var html = '<span style="font-size:10px;letter-spacing:3px;color:#4a90d9;text-transform:uppercase;display:block;margin-bottom:14px;">'+reports.length+' Reports</span>';
+  reports.forEach(function(r) {
+    var rc = readCount(r); var tc = totalC(r); var done = rc===tc && tc>0;
+    html += '<div class="archive-card" onclick="openArchive('+r.id+')">';
+    html += '<div class="archive-date">'+r.date_label+'</div>';
+    html += '<div class="archive-footer">';
+    html += '<div class="pills">'+(r.schedule||[]).map(function(s){ return '<span class="pill '+pillCls(s.market)+'">'+s.market+' &middot; '+s.sector+'</span>'; }).join("")+'</div>';
+    html += '<span class="read-stat'+(done?" all-done":"")+'">'+( done ? "&#10003; All read" : rc+"/"+tc+" read")+'</span>';
+    html += '</div></div>';
+  });
+  return html;
+}
+
+function openArchive(rid) {
+  selectedId = rid; activeTab = 0; openMap = {}; topView = "archive";
+  document.getElementById("btn-today").className = "top-nav-btn";
+  document.getElementById("btn-archive").className = "top-nav-btn active";
+  render();
+}
+
+init();
+loadReports().then(function() {
+  if (reports.length > 0) selectedId = reports[0].id;
+  render();
+}).catch(function() {
+  document.getElementById("app").innerHTML = '<div class="empty">Could not load reports.</div>';
+});
 </script>
 </body>
 </html>
