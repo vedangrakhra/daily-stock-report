@@ -54,6 +54,7 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .company-body { display: none; border-top: 1px solid #1e3a5f; }
 .company-body.is-open { display: block; }
 .company-report { background: #fff; padding: 0; }
+/* Deep dive styles */
 .dive-bar { padding: 12px 20px; background: #0a1628; border-top: 1px solid #1e3a5f; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .dive-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 18px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
 .dive-btn:hover { background: #1e40af; }
@@ -66,6 +67,7 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 @keyframes spin { to { transform: rotate(360deg); } }
 .dive-loading-text { font-size: 13px; color: #7fa8d4; vertical-align: middle; }
 .dive-error { padding: 16px 20px; font-size: 13px; color: #ef4444; }
+/* Notes */
 .notes-section { padding: 16px 20px 20px; }
 .notes-label { font-size: 10px; letter-spacing: 2px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 .note-item { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -75,15 +77,18 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .note-input { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; resize: vertical; }
 .note-input::placeholder { color: #475569; }
 .add-note-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+/* To Read */
 .toread-item { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
 .toread-item-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: pointer; }
 .toread-item-header:hover { background: #132238; }
 .toread-date-badge { font-size: 11px; color: #4a90d9; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 6px; padding: 3px 8px; white-space: nowrap; flex-shrink: 0; }
 .toread-company { font-size: 15px; font-weight: 600; color: #fff; flex: 1; }
 .toread-sector { font-size: 12px; color: #7fa8d4; }
+.toread-market-pill { font-size: 11px; padding: 2px 10px; border-radius: 20px; flex-shrink: 0; }
 .toread-body { display: none; border-top: 1px solid #1e3a5f; }
 .toread-body.is-open { display: block; }
 .toread-section-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; display: block; margin-bottom: 14px; }
+/* Archive */
 .archive-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; cursor: pointer; }
 .archive-card:hover { border-color: #3b5ea6; }
 .archive-date { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 8px; }
@@ -97,6 +102,8 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .read-stat.all-done { color: #22c55e; }
 .empty { color: #475569; font-size: 14px; padding: 40px 0; text-align: center; }
 .back-btn { background: transparent; border: none; color: #7fa8d4; font-size: 13px; cursor: pointer; margin-bottom: 16px; padding: 0; display: block; }
+.market-theme { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.market-theme-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 @media (max-width: 600px) {
   .header, .body { padding: 16px; }
   .market-tab { padding: 10px 12px; font-size: 12px; }
@@ -182,7 +189,9 @@ function getUnreadItems() {
     (r.schedule||[]).forEach(function(seg) {
       (seg.companies||[]).forEach(function(company) {
         var key = seg.market + ":" + company;
-        if (!rs(r)[key]) items.push({ r: r, market: seg.market, sector: seg.sector, company: company });
+        if (!rs(r)[key]) {
+          items.push({ r: r, market: seg.market, sector: seg.sector, company: company });
+        }
       });
     });
   });
@@ -251,7 +260,8 @@ function companyCardHTML(r, market, sector, company) {
   var companyHtml=(ch(r)[company]||"");
   var safeKey=(r.id+key).replace(/[^a-zA-Z0-9]/g,"_");
   var diveKey=r.id+":"+key;
-  if(!diveCache[diveKey] && dd(r)[company]) diveCache[diveKey]=dd(r)[company];
+  // Load from Supabase if not already cached
+  if(!diveCache[diveKey] && dd(r)[company]) diveCache[diveKey] = dd(r)[company];
   var hasDive=!!diveCache[diveKey];
 
   var html='<div class="company-card'+(isBk?" is-bookmarked":"")+'">';
@@ -263,25 +273,39 @@ function companyCardHTML(r, market, sector, company) {
   html+='<button class="star-btn'+(isBk?" is-bookmarked":"")+'" onclick="event.stopPropagation();doBookmark('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')" title="Bookmark">&#9733;</button>';
   html+='<span class="chevron'+(isOpen?" is-open":"")+'">&#9660;</span>';
   html+='</div>';
+
   html+='<div class="company-body'+(isOpen?" is-open":"")+'">';
   if(companyHtml) {
     html+='<div class="company-report">'+companyHtml+'</div>';
   } else {
     html+='<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company. Re-run the workflow to generate individual reports.</div>';
   }
+
+  // Deep dive bar
   html+='<div class="dive-bar">';
   if(hasDive) {
     html+='<span class="dive-label" style="color:#22c55e;">&#10003; Deep dive generated</span>';
+    html+='<div style="display:flex;gap:8px;">';
+    html+='<button class="dive-btn" style="background:#0a3d1f;border:1px solid #166534;" onclick="downloadPDF(\''+ea(company)+'\',\''+ea(market)+'\',\''+ea(sector)+'\',\''+diveKey+'\',\''+safeKey+'\')">&#11015; PDF</button>';
     html+='<button class="dive-btn" style="background:#0f1e3c;border:1px solid #1e3a5f;" onclick="clearDive(\''+diveKey+'\',\''+safeKey+'\')">Clear</button>';
+    html+='</div>';
   } else {
     html+='<span class="dive-label">Want to go deeper on this one?</span>';
+    html+='<div style="display:flex;gap:8px;">';
+    html+='<button class="dive-btn" style="background:#0f2d1a;border:1px solid #1e3a5f;color:#4ade80;" onclick="downloadPDF(\''+ea(company)+'\',\''+ea(market)+'\',\''+ea(sector)+'\',\''+diveKey+'\',\''+safeKey+'\')">&#11015; PDF</button>';
     html+='<button class="dive-btn" id="divebtn_'+safeKey+'" onclick="requestDive(\''+ea(company)+'\',\''+ea(market)+'\',\''+ea(sector)+'\',\''+diveKey+'\',\''+safeKey+'\')">';
     html+='<span class="dive-icon">&#9654;</span> Deep Dive</button>';
+    html+='</div>';
   }
   html+='</div>';
+
+  // Deep dive result area
   html+='<div id="diveresult_'+safeKey+'">';
-  if(hasDive) html+='<div class="dive-result">'+diveCache[diveKey]+'</div>';
+  if(hasDive) {
+    html+='<div class="dive-result">'+diveCache[diveKey]+'</div>';
+  }
   html+='</div>';
+
   html+='<div class="notes-section">';
   html+='<span class="notes-label">Notes</span>';
   if(notes.length===0) html+='<div style="font-size:13px;color:#475569;margin-bottom:10px;">No notes yet.</div>';
@@ -294,6 +318,8 @@ function companyCardHTML(r, market, sector, company) {
   html+='</div></div></div>';
   return html;
 }
+
+// ── Deep dive ──────────────────────────────────────────────────────────────
 
 function buildDivePrompt(company, market, sector) {
   var today = new Date().toLocaleDateString("en-CA",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
@@ -347,12 +373,13 @@ async function requestDive(company, market, sector, diveKey, safeKey) {
     if(!html) throw new Error("Empty response");
     html = html.replace(/^```html?\n?/i,"").replace(/```$/,"").trim();
     diveCache[diveKey] = html;
-    var ridFromKey = parseInt(diveKey.split(":")[0]);
-    var r = getR(ridFromKey);
+    // Save to Supabase — extract rid from diveKey (format: "rid:market:company")
+    var ridFromKey = diveKey.split(":")[0];
+    var r = getR(parseInt(ridFromKey));
     if(r) {
       var dives = Object.assign({}, dd(r));
       dives[company] = html;
-      await patch(ridFromKey, {deep_dive_html: dives});
+      await patch(parseInt(ridFromKey), {deep_dive_html: dives});
     }
     resultEl.innerHTML = '<div class="dive-result">'+html+'</div>';
     var bar = resultEl.previousElementSibling;
@@ -368,8 +395,11 @@ async function requestDive(company, market, sector, diveKey, safeKey) {
 
 async function clearDive(diveKey, safeKey) {
   delete diveCache[diveKey];
+  // Remove from Supabase
   var parts = diveKey.split(":");
   var rid = parseInt(parts[0]);
+  // company is everything after "rid:market:" — rejoin in case company name has colons
+  var market = parts[1];
   var company = parts.slice(2).join(":");
   var r = getR(rid);
   if(r) {
@@ -378,6 +408,49 @@ async function clearDive(diveKey, safeKey) {
     await patch(rid, {deep_dive_html: dives});
   }
   render();
+}
+
+// ── Rest of app ────────────────────────────────────────────────────────────
+
+function downloadPDF(company, market, sector, diveKey, safeKey) {
+  var r = getR(selectedId) || reports[0];
+  var dailyHtml = r ? (ch(r)[company] || "<p>No daily report available.</p>") : "<p>No daily report available.</p>";
+  var diveHtml = diveCache[diveKey] ? diveCache[diveKey] : "";
+  var today = new Date().toLocaleDateString("en-CA",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+
+  var printWindow = window.open("","_blank");
+  printWindow.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>${company} — Research Report</title>
+<style>
+  body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; color: #1a1a1a; }
+  .cover { background: #0f1e3c; color: #fff; padding: 40px 48px 32px; }
+  .cover-eyebrow { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #4a90d9; margin-bottom: 10px; }
+  .cover-title { font-size: 28px; font-weight: 700; margin: 0 0 6px; }
+  .cover-sub { font-size: 14px; color: #7fa8d4; }
+  .cover-meta { font-size: 12px; color: #475569; margin-top: 16px; }
+  .section { padding: 0; }
+  .section-divider { border: none; border-top: 2px solid #e2e8f0; margin: 0; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none; }
+  }
+</style>
+</head><body>
+<div class="cover">
+  <div class="cover-eyebrow">Global Equity Intelligence</div>
+  <div class="cover-title">${company}</div>
+  <div class="cover-sub">${market} &nbsp;·&nbsp; ${sector}</div>
+  <div class="cover-meta">Generated ${today}</div>
+</div>
+<div class="section">${dailyHtml}</div>
+${diveHtml ? '<hr class="section-divider"><div class="section">'+diveHtml+'</div>' : ''}
+<div class="no-print" style="padding:20px;text-align:center;">
+  <button onclick="window.print()" style="background:#1d4ed8;color:#fff;border:none;padding:10px 24px;border-radius:7px;font-size:14px;cursor:pointer;font-family:inherit;">Print / Save as PDF</button>
+</div>
+</body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(function(){ printWindow.print(); }, 500);
 }
 
 function setTab(i,rid){activeTab=i;selectedId=rid;render();}
@@ -486,7 +559,7 @@ function toReadHTML() {
     var safeKey = (item.r.id+item.market+item.company).replace(/[^a-zA-Z0-9]/g,"_");
     var notes = (cn(item.r)[item.market+":"+item.company]||[]);
     var diveKey = item.r.id+":"+item.market+":"+item.company;
-    if(!diveCache[diveKey] && dd(item.r)[item.company]) diveCache[diveKey]=dd(item.r)[item.company];
+    if(!diveCache[diveKey] && dd(item.r)[item.company]) diveCache[diveKey] = dd(item.r)[item.company];
     var hasDive = !!diveCache[diveKey];
     html += '<div class="toread-item">';
     html += '<div class="toread-item-header" onclick="toggleToRead(\''+ea(openKey)+'\')">';
@@ -501,6 +574,7 @@ function toReadHTML() {
     } else {
       html += '<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company.</div>';
     }
+    // Deep dive bar in To Read view too
     html+='<div class="dive-bar">';
     if(hasDive) {
       html+='<span class="dive-label" style="color:#22c55e;">&#10003; Deep dive generated</span>';
