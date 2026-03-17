@@ -54,20 +54,6 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .company-body { display: none; border-top: 1px solid #1e3a5f; }
 .company-body.is-open { display: block; }
 .company-report { background: #fff; padding: 0; }
-/* Deep dive styles */
-.dive-bar { padding: 12px 20px; background: #0a1628; border-top: 1px solid #1e3a5f; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.dive-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 18px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
-.dive-btn:hover { background: #1e40af; }
-.dive-btn:disabled { background: #1e3a5f; color: #475569; cursor: not-allowed; }
-.dive-btn .dive-icon { font-size: 14px; }
-.dive-label { font-size: 11px; color: #475569; }
-.dive-result { background: #fff; border-top: 1px solid #1e3a5f; }
-.dive-loading { padding: 28px 20px; text-align: center; }
-.dive-loading-spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid #1e3a5f; border-top-color: #4a90d9; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.dive-loading-text { font-size: 13px; color: #7fa8d4; vertical-align: middle; }
-.dive-error { padding: 16px 20px; font-size: 13px; color: #ef4444; }
-/* Notes */
 .notes-section { padding: 16px 20px 20px; }
 .notes-label { font-size: 10px; letter-spacing: 2px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 .note-item { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -77,8 +63,17 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .note-input { width: 100%; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; font-family: inherit; outline: none; resize: vertical; }
 .note-input::placeholder { color: #475569; }
 .add-note-btn { background: #1d4ed8; border: none; color: #fff; padding: 8px 16px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-/* Archive */
-.archive-card { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; cursor: pointer; }
+.toread-item { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+.toread-item-header { display: flex; align-items: center; gap: 12px; padding: 14px 20px; cursor: pointer; }
+.toread-item-header:hover { background: #132238; }
+.toread-date-badge { font-size: 11px; color: #4a90d9; background: #0a1628; border: 1px solid #1e3a5f; border-radius: 6px; padding: 3px 8px; white-space: nowrap; flex-shrink: 0; }
+.toread-company { font-size: 15px; font-weight: 600; color: #fff; flex: 1; }
+.toread-sector { font-size: 12px; color: #7fa8d4; }
+.toread-market-pill { font-size: 11px; padding: 2px 10px; border-radius: 20px; flex-shrink: 0; }
+.toread-body { display: none; border-top: 1px solid #1e3a5f; }
+.toread-body.is-open { display: block; }
+.toread-section-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; display: block; margin-bottom: 14px; }
+
 .archive-card:hover { border-color: #3b5ea6; }
 .archive-date { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 8px; }
 .archive-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -91,6 +86,8 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 .read-stat.all-done { color: #22c55e; }
 .empty { color: #475569; font-size: 14px; padding: 40px 0; text-align: center; }
 .back-btn { background: transparent; border: none; color: #7fa8d4; font-size: 13px; cursor: pointer; margin-bottom: 16px; padding: 0; display: block; }
+.market-theme { background: #0f1e3c; border: 1px solid #1e3a5f; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+.market-theme-label { font-size: 10px; letter-spacing: 3px; color: #4a90d9; text-transform: uppercase; margin-bottom: 10px; display: block; }
 @media (max-width: 600px) {
   .header, .body { padding: 16px; }
   .market-tab { padding: 10px 12px; font-size: 12px; }
@@ -106,6 +103,7 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
     <div class="top-nav">
       <button class="top-nav-btn active" id="btn-today" onclick="switchTop('today')">Today</button>
       <button class="top-nav-btn" id="btn-archive" onclick="switchTop('archive')">Archive</button>
+      <button class="top-nav-btn" id="btn-toread" onclick="switchTop('toread')">To Read <span id="toread-count" style="display:none;background:#ef4444;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px;"></span></button>
     </div>
   </div>
 </div>
@@ -114,13 +112,11 @@ body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: 
 <script>
 var SUPA_URL = "https://zywpzgjbsjjqedhhvbam.supabase.co";
 var SUPA_KEY = "sb_publishable_1D3jeBJUM3-DdifaHdx4Bg_MSJiQrsg";
-var WORKER_URL = "https://anthropic-proxy.vedangrakhra.workers.dev/"
 var reports = [];
 var topView = "today";
 var selectedId = null;
 var activeTab = 0;
 var openMap = {};
-var diveCache = {}; // key -> html, persists for the session so you don't re-generate
 var calYear, calMonth;
 var MARKETS = ["North America","Asia","Emerging Markets"];
 var TAB_CLS = ["tab-na","tab-asia","tab-em"];
@@ -159,18 +155,44 @@ function ch(r){return r.company_html||{};}
 function readCount(r){return Object.values(rs(r)).filter(Boolean).length;}
 function totalC(r){return (r.schedule||[]).reduce(function(n,s){return n+(s.companies||[]).length;},0);}
 
+function updateToReadCount() {
+  var count = getUnreadItems().length;
+  var badge = document.getElementById("toread-count");
+  if (badge) {
+    if (count > 0) { badge.textContent = count; badge.style.display = "inline"; }
+    else { badge.style.display = "none"; }
+  }
+}
+
+function getUnreadItems() {
+  var items = [];
+  reports.forEach(function(r) {
+    (r.schedule||[]).forEach(function(seg) {
+      (seg.companies||[]).forEach(function(company) {
+        var key = seg.market + ":" + company;
+        if (!rs(r)[key]) {
+          items.push({ r: r, market: seg.market, sector: seg.sector, company: company });
+        }
+      });
+    });
+  });
+  return items;
+}
+
 function switchTop(v) {
   topView = v;
   if (v==="today") selectedId = reports.length>0?reports[0].id:null;
-  else selectedId = null;
+  else if (v!=="toread") selectedId = null;
   activeTab=0; openMap={};
   document.getElementById("btn-today").className="top-nav-btn"+(v==="today"?" active":"");
   document.getElementById("btn-archive").className="top-nav-btn"+(v==="archive"?" active":"");
+  document.getElementById("btn-toread").className="top-nav-btn"+(v==="toread"?" active":"");
   render();
 }
 
 function render() {
   var app = document.getElementById("app");
+  updateToReadCount();
   if ((topView==="today"||topView==="archive") && selectedId) {
     var r = getR(selectedId);
     if (r) {
@@ -179,6 +201,7 @@ function render() {
       return;
     }
   }
+  if (topView==="toread"){app.innerHTML=toReadHTML();return;}
   if (topView==="archive"){app.innerHTML=archiveHTML();return;}
   app.innerHTML='<div class="empty">No report yet today. Check back after 9am.</div>';
 }
@@ -217,10 +240,8 @@ function companyCardHTML(r, market, sector, company) {
   var notes=(cn(r)[key]||[]);
   var companyHtml=(ch(r)[company]||"");
   var safeKey=(r.id+key).replace(/[^a-zA-Z0-9]/g,"_");
-  var diveKey=r.id+":"+key;
-  var hasDive=!!diveCache[diveKey];
 
-  var html='<div class="company-card'+(isBk?" is-bookmarked":"")+'" id="card_'+safeKey+'">';
+  var html='<div class="company-card'+(isBk?" is-bookmarked":"")+'">';
   html+='<div class="company-header" onclick="toggleOpen('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')">';
   html+='<div class="read-circle'+(isRead?" is-read":"")+'" onclick="event.stopPropagation();doRead('+r.id+',\''+ea(market)+'\',\''+ea(company)+'\')" title="'+(isRead?"Mark unread":"Mark read")+'">';
   if(isRead) html+='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -231,34 +252,11 @@ function companyCardHTML(r, market, sector, company) {
   html+='</div>';
 
   html+='<div class="company-body'+(isOpen?" is-open":"")+'">';
-
-  // Daily report
   if(companyHtml) {
     html+='<div class="company-report">'+companyHtml+'</div>';
   } else {
-    html+='<div style="padding:20px;color:#475569;font-size:13px;">Report not available. Re-run the workflow to generate.</div>';
+    html+='<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company. Re-run the workflow to generate individual reports.</div>';
   }
-
-  // Deep dive bar — always shown when card is open
-  html+='<div class="dive-bar">';
-  if(hasDive) {
-    html+='<span class="dive-label" style="color:#22c55e;">&#10003; Deep dive generated</span>';
-    html+='<button class="dive-btn" style="background:#0f1e3c;border:1px solid #1e3a5f;" onclick="clearDive(\''+diveKey+'\',\''+safeKey+'\')">Clear</button>';
-  } else {
-    html+='<span class="dive-label">Want to go deeper on this one?</span>';
-    html+='<button class="dive-btn" id="divebtn_'+safeKey+'" onclick="requestDive(\''+ea(company)+'\',\''+ea(market)+'\',\''+ea(sector)+'\',\''+diveKey+'\',\''+safeKey+'\')">';
-    html+='<span class="dive-icon">&#9654;</span> Deep Dive</button>';
-  }
-  html+='</div>';
-
-  // Deep dive result area
-  html+='<div id="diveresult_'+safeKey+'">';
-  if(hasDive) {
-    html+='<div class="dive-result">'+diveCache[diveKey]+'</div>';
-  }
-  html+='</div>';
-
-  // Notes
   html+='<div class="notes-section">';
   html+='<span class="notes-label">Notes</span>';
   if(notes.length===0) html+='<div style="font-size:13px;color:#475569;margin-bottom:10px;">No notes yet.</div>';
@@ -271,95 +269,6 @@ function companyCardHTML(r, market, sector, company) {
   html+='</div></div></div>';
   return html;
 }
-
-// ── Deep dive ──────────────────────────────────────────────────────────────
-
-function buildDivePrompt(company, market, sector) {
-  var today = new Date().toLocaleDateString("en-CA",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
-  return "You are a senior equity research analyst writing an on-demand deep dive for a corporate development professional who has already read a short overview of this company and wants to go significantly deeper.\n\n" +
-"Today's date: " + today + "\n" +
-"Company: " + company + " | " + market + " | " + sector + "\n\n" +
-"Write a deep dive covering these three areas. Be specific, opinionated, and analytical. Name real numbers, real products, real competitors.\n\n" +
-"---\n" +
-"<div style=\"font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;padding:24px;background:#ffffff;border-top:3px solid #1d4ed8;\">\n\n" +
-"  <div style=\"margin-bottom:6px;\"><span style=\"font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1d4ed8;font-weight:700;\">Deep Dive — " + company + "</span></div>\n\n" +
-"  <div style=\"margin-bottom:22px;\">\n" +
-"    <div style=\"font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1e3a5f;font-weight:700;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;\">Financials & Valuation</div>\n" +
-"    <p style=\"font-size:14px;color:#374151;line-height:1.75;margin:0;\">[4-5 sentences. Cover: approximate revenue and revenue growth rate, EBITDA or operating margin, free cash flow generation, balance sheet (net debt or net cash). Then valuation: current P/E or EV/EBITDA, how that compares to the 3-year historical average and to the 2-3 closest peers. Is the current multiple justified, stretched, or cheap given the growth profile? Be specific with numbers.]</p>\n" +
-"  </div>\n\n" +
-"  <div style=\"margin-bottom:22px;\">\n" +
-"    <div style=\"font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1e3a5f;font-weight:700;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;\">Recent Earnings & What the Market Is Watching</div>\n" +
-"    <p style=\"font-size:14px;color:#374151;line-height:1.75;margin:0;\">[3-4 sentences. What happened in the most recent earnings report — beats, misses, guidance. What was the market's reaction and why. What are the 2-3 KPIs investors are most focused on right now heading into the next quarter.]</p>\n" +
-"  </div>\n\n" +
-"  <div style=\"margin-bottom:6px;\">\n" +
-"    <div style=\"font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#1e3a5f;font-weight:700;border-bottom:2px solid #e2e8f0;padding-bottom:6px;margin-bottom:12px;\">Management & Capital Allocation</div>\n" +
-"    <p style=\"font-size:14px;color:#374151;line-height:1.75;margin:0;\">[3-4 sentences. Who runs this company — CEO background and tenure. How has management allocated capital historically: M&A track record, buybacks, dividends, R&D investment. Are they building a bigger moat or milking the business? One sentence on whether you trust the capital allocation framework.]</p>\n" +
-"  </div>\n\n" +
-"  <div style=\"background:#0f1e3c;border-radius:8px;padding:14px 18px;margin-top:20px;\">\n" +
-"    <div style=\"font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#4a90d9;margin-bottom:6px;\">Bottom Line</div>\n" +
-"    <p style=\"font-size:14px;color:#e2e8f0;line-height:1.75;margin:0;\">[2-3 sentences. One clear analytical opinion: what would make you want to own this stock, and what is the single biggest thing that could go wrong. End with a one-sentence verdict.]</p>\n" +
-"  </div>\n\n" +
-"</div>\n" +
-"---\n\n" +
-"Output ONLY the HTML. No explanation, no markdown, no code fences.";
-}
-
-async function requestDive(company, market, sector, diveKey, safeKey) {
-  var btn = document.getElementById("divebtn_"+safeKey);
-  var resultEl = document.getElementById("diveresult_"+safeKey);
-  if(!resultEl) return;
-
-  // Show loading state
-  if(btn) { btn.disabled=true; btn.innerHTML='<span class="dive-loading-spinner"></span> Generating...'; }
-  resultEl.innerHTML = '<div class="dive-loading"><span class="dive-loading-spinner"></span><span class="dive-loading-text">Generating deep dive — this takes about 20 seconds...</span></div>';
-
-  try {
-    var resp = await fetch(WORKER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 3500,
-        messages: [{ role: "user", content: buildDivePrompt(company, market, sector) }]
-      })
-    });
-
-    if(!resp.ok) {
-      throw new Error("API returned " + resp.status);
-    }
-
-    var data = await resp.json();
-    var html = data.content && data.content[0] && data.content[0].text;
-    if(!html) throw new Error("Empty response");
-
-    // Strip any accidental code fences
-    html = html.replace(/^```html?\n?/i,"").replace(/```$/,"").trim();
-
-    // Cache and display
-    diveCache[diveKey] = html;
-    resultEl.innerHTML = '<div class="dive-result">'+html+'</div>';
-
-    // Update the bar
-    var bar = resultEl.previousElementSibling;
-    if(bar && bar.classList.contains("dive-bar")) {
-      bar.innerHTML = '<span class="dive-label" style="color:#22c55e;">&#10003; Deep dive generated</span>' +
-        '<button class="dive-btn" style="background:#0f1e3c;border:1px solid #1e3a5f;" onclick="clearDive(\''+diveKey+'\',\''+safeKey+'\')">Clear</button>';
-    }
-
-  } catch(e) {
-    resultEl.innerHTML = '<div class="dive-error">Could not generate deep dive: '+e.message+'. Check your Anthropic key in the ANTHROPIC_KEY variable.</div>';
-    if(btn) { btn.disabled=false; btn.innerHTML='<span class="dive-icon">&#9654;</span> Deep Dive'; }
-  }
-}
-
-function clearDive(diveKey, safeKey) {
-  delete diveCache[diveKey];
-  render();
-}
-
-// ── Rest of app (unchanged logic) ─────────────────────────────────────────
 
 function setTab(i,rid){activeTab=i;selectedId=rid;render();}
 
@@ -453,6 +362,57 @@ function selectDate(rid){
   topView="today";
   document.getElementById("btn-today").className="top-nav-btn active";
   document.getElementById("btn-archive").className="top-nav-btn";
+  render();
+}
+
+function toReadHTML() {
+  var items = getUnreadItems();
+  if (items.length === 0) return '<div class="empty" style="padding:60px 0;">&#10003; You\'re all caught up! Nothing left to read.</div>';
+  var html = '<span class="toread-section-label">'+items.length+' unread '+(items.length===1?'company':'companies')+'</span>';
+  items.forEach(function(item) {
+    var openKey = "toread:"+item.r.id+":"+item.market+":"+item.company;
+    var isOpen = !!openMap[openKey];
+    var companyHtml = (ch(item.r)[item.company]||"");
+    var safeKey = (item.r.id+item.market+item.company).replace(/[^a-zA-Z0-9]/g,"_");
+    var notes = (cn(item.r)[item.market+":"+item.company]||[]);
+    html += '<div class="toread-item">';
+    html += '<div class="toread-item-header" onclick="toggleToRead(\''+ea(openKey)+'\')">';
+    html += '<div style="flex:1"><div class="toread-company">'+eh(item.company)+'</div><div class="toread-sector">'+eh(item.sector)+' &middot; '+eh(item.market)+'</div></div>';
+    html += '<span class="toread-date-badge">'+item.r.date_label+'</span>';
+    html += '<div class="read-circle" onclick="event.stopPropagation();doReadToRead('+item.r.id+',\''+ea(item.market)+'\',\''+ea(item.company)+'\')" title="Mark read" style="flex-shrink:0;width:22px;height:22px;border-radius:50%;border:2px solid #334155;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:10px;"></div>';
+    html += '<span class="chevron'+(isOpen?" is-open":"")+'" style="margin-left:8px;">&#9660;</span>';
+    html += '</div>';
+    html += '<div class="toread-body'+(isOpen?" is-open":"")+'">';
+    if (companyHtml) {
+      html += '<div class="company-report">'+companyHtml+'</div>';
+    } else {
+      html += '<div style="padding:20px;color:#475569;font-size:13px;">Report not available for this company.</div>';
+    }
+    html += '<div class="notes-section">';
+    html += '<span class="notes-label">Notes</span>';
+    if(notes.length===0) html+='<div style="font-size:13px;color:#475569;margin-bottom:10px;">No notes yet.</div>';
+    notes.forEach(function(n){
+      html+='<div class="note-item"><div><div class="note-text">'+eh(n.text)+'</div><div class="note-ts">'+n.ts+'</div></div>';
+      html+='<button class="del-note-btn" onclick="doDelNote('+item.r.id+',\''+ea(item.market)+'\',\''+ea(item.company)+'\','+n.id+')">&#215;</button></div>';
+    });
+    html+='<textarea class="note-input" id="ni_tr_'+safeKey+'" rows="2" placeholder="Add a note..."></textarea>';
+    html+='<button class="add-note-btn" onclick="doAddNote('+item.r.id+',\''+ea(item.market)+'\',\''+ea(item.company)+'\',\'ni_tr_'+safeKey+'\')">+ Add Note</button>';
+    html+='</div></div></div>';
+  });
+  return html;
+}
+
+function toggleToRead(openKey) {
+  openMap[openKey] = !openMap[openKey];
+  render();
+}
+
+async function doReadToRead(rid, market, company) {
+  var r = getR(rid); if(!r) return;
+  var key = market+":"+company;
+  var state = Object.assign({}, rs(r));
+  state[key] = true;
+  await patch(rid, {read_state: state});
   render();
 }
 
