@@ -170,6 +170,7 @@ function rs(r){return r.read_state||{};}
 function bk(r){return r.bookmarks||{};}
 function cn(r){return r.company_notes||{};}
 function ch(r){return r.company_html||{};}
+function dd(r){return r.deep_dive_html||{};}
 function readCount(r){return Object.values(rs(r)).filter(Boolean).length;}
 function totalC(r){return (r.schedule||[]).reduce(function(n,s){return n+(s.companies||[]).length;},0);}
 
@@ -259,6 +260,8 @@ function companyCardHTML(r, market, sector, company) {
   var companyHtml=(ch(r)[company]||"");
   var safeKey=(r.id+key).replace(/[^a-zA-Z0-9]/g,"_");
   var diveKey=r.id+":"+key;
+  // Load from Supabase if not already cached
+  if(!diveCache[diveKey] && dd(r)[company]) diveCache[diveKey] = dd(r)[company];
   var hasDive=!!diveCache[diveKey];
 
   var html='<div class="company-card'+(isBk?" is-bookmarked":"")+'">';
@@ -364,6 +367,14 @@ async function requestDive(company, market, sector, diveKey, safeKey) {
     if(!html) throw new Error("Empty response");
     html = html.replace(/^```html?\n?/i,"").replace(/```$/,"").trim();
     diveCache[diveKey] = html;
+    // Save to Supabase — extract rid from diveKey (format: "rid:market:company")
+    var ridFromKey = diveKey.split(":")[0];
+    var r = getR(parseInt(ridFromKey));
+    if(r) {
+      var dives = Object.assign({}, dd(r));
+      dives[company] = html;
+      await patch(parseInt(ridFromKey), {deep_dive_html: dives});
+    }
     resultEl.innerHTML = '<div class="dive-result">'+html+'</div>';
     var bar = resultEl.previousElementSibling;
     if(bar && bar.classList.contains("dive-bar")) {
@@ -376,8 +387,20 @@ async function requestDive(company, market, sector, diveKey, safeKey) {
   }
 }
 
-function clearDive(diveKey, safeKey) {
+async function clearDive(diveKey, safeKey) {
   delete diveCache[diveKey];
+  // Remove from Supabase
+  var parts = diveKey.split(":");
+  var rid = parseInt(parts[0]);
+  // company is everything after "rid:market:" — rejoin in case company name has colons
+  var market = parts[1];
+  var company = parts.slice(2).join(":");
+  var r = getR(rid);
+  if(r) {
+    var dives = Object.assign({}, dd(r));
+    delete dives[company];
+    await patch(rid, {deep_dive_html: dives});
+  }
   render();
 }
 
@@ -489,6 +512,7 @@ function toReadHTML() {
     var safeKey = (item.r.id+item.market+item.company).replace(/[^a-zA-Z0-9]/g,"_");
     var notes = (cn(item.r)[item.market+":"+item.company]||[]);
     var diveKey = item.r.id+":"+item.market+":"+item.company;
+    if(!diveCache[diveKey] && dd(item.r)[item.company]) diveCache[diveKey] = dd(item.r)[item.company];
     var hasDive = !!diveCache[diveKey];
     html += '<div class="toread-item">';
     html += '<div class="toread-item-header" onclick="toggleToRead(\''+ea(openKey)+'\')">';
