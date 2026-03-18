@@ -115,9 +115,11 @@ def pick_companies(seen_companies, date_str):
     )
     resp.raise_for_status()
 
-    raw = resp.json()["content"][0]["text"].strip()
-    raw = raw.replace("```json", "").replace("```", "").strip()
-    selection = json.loads(raw)
+raw = resp.json()["content"][0]["text"].strip()
+start = raw.find("{")
+end = raw.rfind("}") + 1
+raw = raw[start:end]
+selection = json.loads(raw)
 
     market_map = {
         "north_america": "North America",
